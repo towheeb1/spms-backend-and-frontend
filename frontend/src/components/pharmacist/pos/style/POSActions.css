@@ -1,0 +1,37 @@
+/* src/components/pharmacist/pos/POSActions.css */
+
+.pos-actions-container {
+  border-radius: 1rem;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background-color: rgba(255, 255, 255, 0.05);
+  padding: 1.5rem;
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+  backdrop-filter: blur(16px);
+}
+
+.pos-actions-header {
+  font-size: 1.125rem;
+  font-weight: 600;
+  color: white;
+  margin-bottom: 1rem;
+}
+
+.pos-actions-buttons {
+  gap: 0.5rem;
+}
+
+.pos-actions-button {
+  width: 100%;
+}
+
+/* Responsive adjustments */
+@media (max-width: 640px) {
+  .pos-actions-container {
+    padding: 1rem;
+  }
+
+  .pos-actions-header {
+    font-size: 1rem;
+    margin-bottom: 0.75rem;
+  }
+}

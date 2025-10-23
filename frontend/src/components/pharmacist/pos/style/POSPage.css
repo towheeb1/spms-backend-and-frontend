@@ -1,0 +1,394 @@
+/* src/components/pharmacist/pos/POSPage.css */
+
+.pos-page-container {
+  display: grid;
+  grid-template-columns: repeat(1, minmax(0, 1fr));
+  gap: 1.5rem;
+}
+
+@media (min-width: 1024px) {
+  .pos-page-container {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+.pos-page-main {
+  grid-column: span 2 / span 2;
+  gap: 1rem;
+}
+
+@media (max-width: 1023px) {
+  .pos-page-main {
+    grid-column: span 1 / span 1;
+  }
+}
+
+.pos-page-sidebar {
+  gap: 1rem;
+}
+
+/* Medicine search and filter section */
+.pos-medicines-section {
+  background-color: #1e293b;
+  border-radius: 1rem;
+  padding: 1rem;
+}
+
+.pos-medicines-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1rem;
+}
+
+.pos-medicines-title-section {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.pos-medicines-title {
+  font-size: 1.125rem;
+  font-weight: 600;
+  color: white;
+}
+
+.pos-loading-info {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  color: #94a3b8;
+}
+
+.pos-loading-spinner {
+  animation: spin 1s linear infinite;
+  border-radius: 50%;
+  height: 1rem;
+  width: 1rem;
+  border-bottom: 2px solid #3b82f6;
+}
+
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.pos-loading-text {
+  font-size: 0.875rem;
+}
+
+.pos-medicines-count {
+  font-size: 0.875rem;
+  color: #94a3b8;
+}
+
+.pos-error-count {
+  color: #f87171;
+  margin-left: 0.5rem;
+}
+
+.pos-refresh-button {
+  padding: 0.75rem;
+  background-color: #334155;
+  color: #cbd5e1;
+  border-radius: 0.5rem;
+  font-size: 0.875rem;
+  transition: background-color 0.15s ease-in-out;
+}
+
+.pos-refresh-button:hover {
+  background-color: #475569;
+}
+
+.pos-refresh-button:disabled {
+  background-color: #1e293b;
+  color: #64748b;
+  cursor: not-allowed;
+}
+
+.pos-refresh-loading {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* Search bar */
+.pos-search-container {
+  margin-bottom: 1rem;
+}
+
+.pos-search-input-wrapper {
+  position: relative;
+}
+
+.pos-search-input {
+  width: 100%;
+  padding: 0.75rem 1rem;
+  background-color: #334155;
+  border: 1px solid #475569;
+  border-radius: 0.5rem;
+  color: white;
+  transition: all 0.15s ease-in-out;
+}
+
+.pos-search-input::placeholder {
+  color: #94a3b8;
+}
+
+.pos-search-input:focus {
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.2);
+}
+
+.pos-search-icon {
+  position: absolute;
+  left: 0.75rem;
+  top: 50%;
+  transform: translateY(-50%);
+  color: #94a3b8;
+}
+
+.pos-search-clear {
+  position: absolute;
+  right: 0.75rem;
+  top: 50%;
+  transform: translateY(-50%);
+  color: #94a3b8;
+  transition: color 0.15s ease-in-out;
+}
+
+.pos-search-clear:hover {
+  color: white;
+  cursor: pointer;
+}
+
+/* Category filters */
+.pos-category-filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-bottom: 1rem;
+}
+
+.pos-category-button {
+  padding: 0.75rem;
+  border-radius: 0.5rem;
+  font-size: 0.875rem;
+  font-weight: 500;
+  transition: all 0.15s ease-in-out;
+  cursor: pointer;
+}
+
+.pos-category-button.all {
+  background-color: #2563eb;
+  color: white;
+}
+
+.pos-category-button.selected {
+  background-color: #16a34a;
+  color: white;
+}
+
+.pos-category-button.unselected {
+  background-color: #334155;
+  color: #cbd5e1;
+}
+
+.pos-category-button.unselected:hover {
+  background-color: #475569;
+}
+
+/* Search results info */
+.pos-search-results {
+  margin-bottom: 0.75rem;
+  font-size: 0.875rem;
+  color: #94a3b8;
+}
+
+/* Debug info (dev mode) */
+.pos-debug-panel {
+  margin-bottom: 0.75rem;
+  padding: 0.5rem;
+  background-color: #0f172a;
+  border-radius: 0.25rem;
+  font-size: 0.75rem;
+  color: #64748b;
+}
+
+/* Medicine grid */
+.pos-medicine-grid {
+  display: grid;
+  grid-template-columns: repeat(1, minmax(0, 1fr));
+  gap: 1rem;
+  max-height: 28rem;
+  overflow-y: auto;
+  padding-right: 0.25rem;
+}
+
+@media (min-width: 768px) {
+  .pos-medicine-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (min-width: 1024px) {
+  .pos-medicine-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+@media (min-width: 1280px) {
+  .pos-medicine-grid {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+}
+
+.pos-medicine-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 0.75rem;
+}
+
+/* Page-level styles only - card styles moved to MedicineCard.css */
+.pos-loading-center {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 2rem 0;
+}
+
+.pos-loading-large {
+  animation: spin 1s linear infinite;
+  border-radius: 50%;
+  height: 2rem;
+  width: 2rem;
+  border-bottom: 2px solid #3b82f6;
+}
+
+/* Error state */
+.pos-error-container {
+  text-align: center;
+  padding: 2rem 0;
+}
+
+.pos-error-icon {
+  color: #f87171;
+  margin-bottom: 1rem;
+}
+
+.pos-error-message {
+  color: #94a3b8;
+  margin-bottom: 1rem;
+}
+
+.pos-retry-button {
+  padding: 1rem;
+  background-color: #2563eb;
+  color: white;
+  border-radius: 0.5rem;
+  transition: background-color 0.15s ease-in-out;
+  cursor: pointer;
+}
+
+.pos-retry-button:hover {
+  background-color: #1d4ed8;
+}
+
+/* Medicine Table */
+.pos-medicine-table-container {
+  overflow-x: auto;
+  border-radius: 0.75rem;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background-color: rgba(15, 23, 42, 0.8);
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+}
+
+.pos-medicine-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.875rem;
+}
+
+.pos-medicine-table thead {
+  background: linear-gradient(135deg, rgba(59, 130, 246, 0.15), rgba(29, 78, 216, 0.15));
+}
+
+.pos-medicine-table th {
+  padding: 1rem 0.75rem;
+  text-align: center;
+  font-weight: 600;
+  color: #e2e8f0;
+  border-bottom: 2px solid rgba(59, 130, 246, 0.3);
+  font-size: 0.8rem;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.pos-medicine-table th:first-child {
+  text-align: right;
+  padding-right: 1rem;
+}
+
+.pos-medicine-table td {
+  padding: 1rem 0.75rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  vertical-align: middle;
+  color: #e2e8f0;
+}
+
+.pos-medicine-table tbody tr:hover {
+  background-color: rgba(255, 255, 255, 0.03);
+}
+
+.pos-medicine-table tbody tr:last-child td {
+  border-bottom: none;
+}
+
+/* Legacy responsive styles - keeping only essential ones */
+@media (max-width: 768px) {
+  .pos-page-container {
+    grid-template-columns: repeat(1, minmax(0, 1fr));
+  }
+
+  .pos-page-main {
+    grid-column: span 1 / span 1;
+  }
+
+  .pos-medicine-table-container {
+    font-size: 0.75rem;
+  }
+
+  .pos-medicine-table th,
+  .pos-medicine-table td {
+    padding: 0.5rem 0.25rem;
+  }
+
+  .pos-medicine-table th {
+    font-size: 0.7rem;
+  }
+
+  .medicine-actions-cell {
+    min-width: 80px;
+  }
+
+  .details-toggle-button,
+  .add-to-cart-button {
+    padding: 4px !important;
+    margin: 0 2px !important;
+  }
+
+  .stock-badge {
+    font-size: 0.6rem !important;
+    padding: 2px 4px !important;
+  }
+}
+
+@media (max-width: 1024px) {
+  .pos-page-container {
+    grid-template-columns: repeat(1, minmax(0, 1fr));
+  }
+}

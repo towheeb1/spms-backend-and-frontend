@@ -1,0 +1,100 @@
+import { api } from "./api";
+
+export type Supplier = {
+  id?: number;
+  name: string;
+  phone?: string | null;
+  email?: string | null;
+  address?: string | null;
+  tax_number?: string | null;
+};
+
+export async function listSuppliers(q?: string) {
+  const { data } = await api.get("/suppliers", { params: q ? { q } : undefined });
+  if (Array.isArray(data)) return data as Supplier[];
+  if (Array.isArray(data?.items)) return data.items as Supplier[];
+  if (Array.isArray(data?.list)) return data.list as Supplier[];
+  const maybe = data && Object.values(data).find((v: any) => Array.isArray(v));
+  if (Array.isArray(maybe)) return maybe as Supplier[];
+  return [];
+}
+
+export async function createSupplier(payload: Supplier) {
+  const { data } = await api.post("/suppliers", payload);
+  return data as { id?: number };
+}
+
+export async function updateSupplier(id: number, payload: Partial<Supplier>) {
+  const { data } = await api.put(`/suppliers/${id}`, payload);
+  return data as { ok: true };
+}
+
+export async function deleteSupplier(id: number) {
+  const { data } = await api.delete(`/suppliers/${id}`);
+  return data as { ok: true };
+}
+
+// أنواع البيانات لاستلام أمر الشراء
+export interface ReceivePurchaseItem {
+  purchase_item_id: number;
+  received_qty: number;
+  batch_no?: string;
+  expiry_date?: string;
+}
+
+export interface ReceivePurchaseRequest {
+  items: ReceivePurchaseItem[];
+}
+
+export interface ReceivePurchaseResponse {
+  success: boolean;
+  message: string;
+  purchase?: {
+    id: number;
+    status: string;
+    received_items: number;
+  };
+}
+
+/**
+ * استلام أمر شراء
+ * @param purchaseOrderId - معرف أمر الشراء
+ * @param items - عناصر الاستلام مع الكميات المستلمة
+ * @returns Promise مع نتيجة العملية
+ */
+export async function receivePurchaseOrder(
+  purchaseOrderId: number,
+  items: ReceivePurchaseItem[]
+): Promise<ReceivePurchaseResponse> {
+  try {
+    const { data } = await api.post(`/purchases/${purchaseOrderId}/receive`, { items });
+
+    if (data.success) {
+      return {
+        success: true,
+        message: data.message,
+        purchase: data.purchase
+      };
+    } else {
+      return {
+        success: false,
+        message: data.message || 'فشل في استلام أمر الشراء'
+      };
+    }
+  } catch (error: any) {
+    console.error('Error receiving purchase order:', error);
+
+    // التعامل مع أخطاء الـ API
+    if (error.response?.data?.message) {
+      return {
+        success: false,
+        message: error.response.data.message
+      };
+    }
+
+    return {
+      success: false,
+      message: 'حدث خطأ غير متوقع أثناء استلام أمر الشراء'
+    };
+  }
+}

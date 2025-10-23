@@ -1,0 +1,161 @@
+/* src/components/pharmacist/suppliers/AddSupplierModal.css */
+
+.add-supplier-modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.5);
+  backdrop-filter: blur(4px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+  z-index: 50;
+}
+
+.add-supplier-modal-content {
+  border-radius: 1rem;
+  padding: 1.5rem;
+  max-width: 28rem;
+  width: 100%;
+  max-height: 90vh;
+  overflow-y: auto;
+  background-color: rgba(255, 255, 255, 0.05);
+  backdrop-filter: blur(4px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.add-supplier-modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1rem;
+}
+
+.add-supplier-modal-title {
+  font-size: 1.125rem;
+  font-weight: 600;
+  color: white;
+}
+
+.add-supplier-modal-close-button {
+  color: #9ca3af;
+  font-size: 1.25rem;
+  transition: color 0.15s ease-in-out;
+  cursor: pointer;
+}
+
+.add-supplier-modal-close-button:hover {
+  color: white;
+}
+
+.add-supplier-modal-form {
+  display: grid;
+  gap: 1rem;
+}
+
+.add-supplier-modal-form-group label {
+  display: block;
+  font-size: 0.875rem;
+  opacity: 0.8;
+  margin-bottom: 0.5rem;
+  color: white;
+}
+
+.add-supplier-modal-input,
+.add-supplier-modal-textarea {
+  width: 100%;
+  padding: 0.75rem 0.75rem;
+  border-radius: 0.75rem;
+  background-color: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  color: white;
+  font-size: 0.875rem;
+  transition: all 0.15s ease-in-out;
+}
+
+.add-supplier-modal-input:focus,
+.add-supplier-modal-textarea:focus {
+  outline: none;
+  border-color: rgba(59, 130, 246, 0.5);
+  box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.2);
+}
+
+.add-supplier-modal-textarea {
+  height: 5rem;
+  resize: vertical;
+}
+
+.add-supplier-modal-actions {
+  display: flex;
+  gap: 0.5rem;
+  padding-top: 0.5rem;
+}
+
+.add-supplier-modal-button-submit {
+  flex: 1;
+  padding: 1rem 1rem;
+  border-radius: 0.75rem;
+  background-color: rgba(37, 99, 235, 0.9);
+  color: white;
+  font-size: 0.875rem;
+  font-weight: 500;
+  transition: background-color 0.15s ease-in-out;
+  cursor: pointer;
+}
+
+.add-supplier-modal-button-submit:hover:not(:disabled) {
+  background-color: #2563eb;
+}
+
+.add-supplier-modal-button-submit:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.add-supplier-modal-button-cancel {
+  padding: 1rem 1rem;
+  border-radius: 0.75rem;
+  background-color: rgba(75, 85, 99, 0.8);
+  color: white;
+  font-size: 0.875rem;
+  font-weight: 500;
+  transition: background-color 0.15s ease-in-out;
+  cursor: pointer;
+}
+
+.add-supplier-modal-button-cancel:hover {
+  background-color: #4b5563;
+}
+
+/* Responsive adjustments */
+@media (max-width: 640px) {
+  .add-supplier-modal-overlay {
+    padding: 0.5rem;
+  }
+
+  .add-supplier-modal-content {
+    padding: 1rem;
+    max-width: calc(100% - 1rem);
+  }
+
+  .add-supplier-modal-title {
+    font-size: 1rem;
+  }
+
+  .add-supplier-modal-form {
+    gap: 0.75rem;
+  }
+
+  .add-supplier-modal-actions {
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+
+  .add-supplier-modal-button-submit,
+  .add-supplier-modal-button-cancel {
+    width: 100%;
+  }
+}

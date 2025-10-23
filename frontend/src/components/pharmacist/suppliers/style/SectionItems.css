@@ -1,0 +1,227 @@
+/* src/components/pharmacist/suppliers/suppliers-com/SectionItems.css */
+
+.section-items-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 1rem;
+}
+
+.section-items-title {
+  font-size: 1.125rem;
+  font-weight: 600;
+  color: white;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.section-items-title-icon {
+  color: #60a5fa;
+}
+
+.section-items-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 1rem;
+}
+
+.section-items-card {
+  background-color: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 0.75rem;
+  padding: 1rem;
+}
+
+.section-items-card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 1rem;
+  padding-bottom: 0.5rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.section-items-item-name {
+  font-size: 1rem;
+  font-weight: 600;
+  color: white;
+}
+
+.section-items-item-details {
+  font-size: 0.75rem;
+  color: #94a3b8;
+}
+
+.section-items-form-grid {
+  display: grid;
+  grid-template-columns: repeat(1, minmax(0, 1fr));
+  gap: 0.75rem;
+  margin-bottom: 1rem;
+}
+
+@media (min-width: 768px) {
+  .section-items-form-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (min-width: 1024px) {
+  .section-items-form-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+@media (min-width: 1280px) {
+  .section-items-form-grid {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+}
+
+.section-items-form-field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.section-items-field-label {
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: white;
+}
+
+.section-items-input {
+  width: 100%;
+  padding: 0.75rem;
+  border-radius: 0.75rem;
+  background-color: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  color: white;
+  font-size: 0.875rem;
+  transition: all 0.15s ease-in-out;
+}
+
+.section-items-input:focus {
+  outline: none;
+  border-color: rgba(59, 130, 246, 0.5);
+  box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.2);
+}
+
+.section-items-input-relative {
+  position: relative;
+}
+
+.section-items-input-icon {
+  position: absolute;
+  right: 0.5rem;
+  top: 50%;
+  transform: translateY(-50%);
+  color: #94a3b8;
+  font-size: 1rem;
+  pointer-events: none;
+}
+
+.section-items-price-display {
+  padding: 0.75rem;
+  border-radius: 0.75rem;
+  font-size: 0.875rem;
+  font-weight: 500;
+  text-align: center;
+  border: 1px solid;
+}
+
+.section-items-price-retail {
+  background: linear-gradient(to right, rgba(34, 197, 94, 0.1), rgba(16, 185, 129, 0.1));
+  border-color: rgba(34, 197, 94, 0.2);
+  color: #86efac;
+}
+
+.section-items-price-blister {
+  background: linear-gradient(to right, rgba(6, 182, 212, 0.1), rgba(37, 99, 235, 0.1));
+  border-color: rgba(6, 182, 212, 0.2);
+  color: #67e8f9;
+}
+
+.section-items-price-tablet {
+  background: linear-gradient(to right, rgba(147, 51, 234, 0.1), rgba(79, 70, 229, 0.1));
+  border-color: rgba(147, 51, 234, 0.2);
+  color: #c4b5fd;
+}
+
+.section-items-price-total {
+  background: linear-gradient(to right, rgba(245, 158, 11, 0.1), rgba(251, 146, 60, 0.1));
+  border-color: rgba(245, 158, 11, 0.2);
+  color: #fde68a;
+  font-weight: 700;
+}
+
+.section-items-delete-button {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.25rem;
+  padding: 0.75rem;
+  border-radius: 0.5rem;
+  background-color: rgba(220, 38, 38, 0.2);
+  color: #fca5a5;
+  font-size: 0.875rem;
+  font-weight: 500;
+  transition: all 0.15s ease-in-out;
+  cursor: pointer;
+}
+
+.section-items-delete-button:hover:not(:disabled) {
+  background-color: rgba(220, 38, 38, 0.3);
+}
+
+.section-items-delete-button:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.section-items-empty-state {
+  text-align: center;
+  padding: 2rem;
+  color: #94a3b8;
+}
+
+.section-items-empty-icon {
+  font-size: 2rem;
+  margin-bottom: 0.5rem;
+}
+
+.section-items-empty-title {
+  font-size: 1.125rem;
+  font-weight: 600;
+  margin-bottom: 0.25rem;
+  color: white;
+}
+
+.section-items-empty-description {
+  font-size: 0.875rem;
+  margin-bottom: 1rem;
+}
+
+.section-items-add-button {
+  padding: 1rem 1rem;
+  border-radius: 0.75rem;
+  background-color: rgba(37, 99, 235, 0.9);
+  color: white;
+  font-size: 0.875rem;
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  transition: background-color 0.15s ease-in-out;
+  cursor: pointer;
+}
+
+.section-items-add-button:hover {
+  background-color: #2563eb;
+}
+
+.section-items-delete-container {
+  display: flex;
+  align-items: flex-end;
+}

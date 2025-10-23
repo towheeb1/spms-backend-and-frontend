@@ -1,0 +1,3 @@
+import { create } from 'zustand'; 
+export type Line = { id: string, name: string, qty: number, price: number, discount?: number }; 
+export const useCart = create<{ lines: Line[], add: (l: Line) => void, remove: (id: string) => void, clear: () => void, total: () => number }>((set, get) => ({ lines: [], add: (l) => set({ lines: [...get().lines, l] }), remove: (id) => set({ lines: get().lines.filter(x => x.id !== id) }), clear: () => set({ lines: [] }), total: () => get().lines.reduce((s, l) => s + (l.qty * l.price) * (1 - ((l.discount || 0) / 100)), 0) }))

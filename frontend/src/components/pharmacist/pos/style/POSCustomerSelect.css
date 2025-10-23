@@ -1,0 +1,23 @@
+/* src/components/pharmacist/pos/POSCustomerSelect.css */
+
+.pos-customer-select-container {
+  margin-bottom: 1rem;
+}
+
+.pos-customer-label {
+  display: block;
+  font-size: 0.875rem;
+  font-weight: 500;
+  margin-bottom: 0.25rem;
+}
+
+/* Responsive adjustments */
+@media (max-width: 640px) {
+  .pos-customer-select-container {
+    margin-bottom: 0.75rem;
+  }
+
+  .pos-customer-label {
+    font-size: 0.75rem;
+  }
+}

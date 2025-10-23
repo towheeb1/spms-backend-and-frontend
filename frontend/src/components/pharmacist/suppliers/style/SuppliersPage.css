@@ -1,0 +1,177 @@
+/* src/components/pharmacist/suppliers/SuppliersPage.css */
+
+.suppliers-page-container {
+  display: grid;
+  gap: 1.5rem;
+}
+
+.suppliers-page-header {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+@media (min-width: 768px) {
+  .suppliers-page-header {
+    flex-direction: row;
+    align-items: center;
+  }
+}
+
+.suppliers-page-title-section h1 {
+  font-size: 1.875rem;
+  font-weight: 700;
+  color: white;
+  line-height: 2.25rem;
+}
+
+.suppliers-page-title-section p {
+  color: #9ca3af;
+  margin-top: 0.25rem;
+}
+
+.suppliers-page-header-buttons {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.suppliers-page-header-button {
+  padding: 1rem 1rem;
+  border-radius: 0.75rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.875rem;
+  font-weight: 500;
+  transition: background-color 0.15s ease-in-out;
+  cursor: pointer;
+}
+
+.suppliers-page-header-button-primary {
+  background-color: rgba(37, 99, 235, 0.9);
+  color: white;
+}
+
+.suppliers-page-header-button-primary:hover {
+  background-color: #2563eb;
+}
+
+.suppliers-page-header-button-success {
+  background-color: rgba(22, 163, 74, 0.9);
+  color: white;
+}
+
+.suppliers-page-header-button-success:hover {
+  background-color: #16a34a;
+}
+
+.suppliers-page-tabs-container {
+  border-radius: 1rem;
+  padding: 0.25rem;
+  background-color: rgba(255, 255, 255, 0.05);
+  backdrop-filter: blur(4px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.suppliers-page-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.25rem;
+}
+
+.suppliers-page-tab-button {
+  padding: 1.5rem 1.5rem;
+  border-radius: 0.75rem;
+  font-size: 0.875rem;
+  font-weight: 500;
+  transition: all 0.15s ease-in-out;
+  cursor: pointer;
+}
+
+.suppliers-page-tab-button-active {
+  background-color: rgba(37, 99, 235, 0.9);
+  color: white;
+}
+
+.suppliers-page-tab-button-active:hover {
+  background-color: rgba(37, 99, 235, 0.9);
+}
+
+.suppliers-page-tab-button-inactive {
+  color: rgba(255, 255, 255, 0.8);
+}
+
+.suppliers-page-tab-button-inactive:hover {
+  background-color: rgba(255, 255, 255, 0.1);
+  color: white;
+}
+
+.suppliers-page-tab-button-purchases-active {
+  background-color: rgba(22, 163, 74, 0.9);
+  color: white;
+}
+
+.suppliers-page-tab-button-purchases-active:hover {
+  background-color: rgba(22, 163, 74, 0.9);
+}
+
+.suppliers-page-tab-button-inventory-active {
+  background-color: rgba(147, 51, 234, 0.9);
+  color: white;
+}
+
+.suppliers-page-tab-button-inventory-active:hover {
+  background-color: rgba(147, 51, 234, 0.9);
+}
+
+.suppliers-page-content {
+  border-radius: 1rem;
+  padding: 1.5rem;
+  background-color: rgba(255, 255, 255, 0.05);
+  backdrop-filter: blur(4px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.suppliers-page-loading {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 3rem 0;
+}
+
+.suppliers-page-spinner {
+  animation: spin 1s linear infinite;
+  border-radius: 50%;
+  height: 3rem;
+  width: 3rem;
+  border-bottom: 2px solid #3b82f6;
+}
+
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.suppliers-page-stats-grid {
+  display: grid;
+  grid-template-columns: repeat(1, minmax(0, 1fr));
+  gap: 1rem;
+}
+
+@media (min-width: 768px) {
+  .suppliers-page-stats-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (min-width: 1024px) {
+  .suppliers-page-stats-grid {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+}

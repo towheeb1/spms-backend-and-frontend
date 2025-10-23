@@ -1,0 +1,154 @@
+/* src/components/pharmacist/suppliers/EditSupplierModal.css */
+
+.edit-supplier-modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.5);
+  backdrop-filter: blur(4px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+  z-index: 50;
+}
+
+.edit-supplier-modal-content {
+  border-radius: 1rem;
+  padding: 1.5rem;
+  max-width: 28rem;
+  width: 100%;
+  background-color: rgba(255, 255, 255, 0.05);
+  backdrop-filter: blur(4px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.edit-supplier-modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1rem;
+}
+
+.edit-supplier-modal-title {
+  font-size: 1.125rem;
+  font-weight: 600;
+  color: white;
+}
+
+.edit-supplier-modal-close-button {
+  color: #9ca3af;
+  font-size: 1.25rem;
+  transition: color 0.15s ease-in-out;
+  cursor: pointer;
+}
+
+.edit-supplier-modal-close-button:hover {
+  color: white;
+}
+
+.edit-supplier-modal-form {
+  display: grid;
+  gap: 1rem;
+}
+
+.edit-supplier-modal-form-group label {
+  display: block;
+  font-size: 0.875rem;
+  opacity: 0.8;
+  margin-bottom: 0.5rem;
+  color: white;
+}
+
+.edit-supplier-modal-input,
+.edit-supplier-modal-textarea {
+  width: 100%;
+  padding: 0.75rem 0.75rem;
+  border-radius: 0.75rem;
+  background-color: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  color: white;
+  font-size: 0.875rem;
+  transition: all 0.15s ease-in-out;
+}
+
+.edit-supplier-modal-input:focus,
+.edit-supplier-modal-textarea:focus {
+  outline: none;
+  border-color: rgba(59, 130, 246, 0.5);
+  box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.2);
+}
+
+.edit-supplier-modal-textarea {
+  height: 5rem;
+  resize: vertical;
+}
+
+.edit-supplier-modal-actions {
+  display: flex;
+  gap: 0.5rem;
+  padding-top: 0.5rem;
+}
+
+.edit-supplier-modal-button-submit {
+  flex: 1;
+  padding: 1rem 1rem;
+  border-radius: 0.75rem;
+  background-color: rgba(37, 99, 235, 0.9);
+  color: white;
+  font-size: 0.875rem;
+  font-weight: 500;
+  transition: background-color 0.15s ease-in-out;
+  cursor: pointer;
+}
+
+.edit-supplier-modal-button-submit:hover {
+  background-color: #2563eb;
+}
+
+.edit-supplier-modal-button-cancel {
+  padding: 1rem 1rem;
+  border-radius: 0.75rem;
+  background-color: rgba(75, 85, 99, 0.8);
+  color: white;
+  font-size: 0.875rem;
+  font-weight: 500;
+  transition: background-color 0.15s ease-in-out;
+  cursor: pointer;
+}
+
+.edit-supplier-modal-button-cancel:hover {
+  background-color: #4b5563;
+}
+
+/* Responsive adjustments */
+@media (max-width: 640px) {
+  .edit-supplier-modal-overlay {
+    padding: 0.5rem;
+  }
+
+  .edit-supplier-modal-content {
+    padding: 1rem;
+    max-width: calc(100% - 1rem);
+  }
+
+  .edit-supplier-modal-title {
+    font-size: 1rem;
+  }
+
+  .edit-supplier-modal-form {
+    gap: 0.75rem;
+  }
+
+  .edit-supplier-modal-actions {
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+
+  .edit-supplier-modal-button-submit,
+  .edit-supplier-modal-button-cancel {
+    width: 100%;
+  }
+}

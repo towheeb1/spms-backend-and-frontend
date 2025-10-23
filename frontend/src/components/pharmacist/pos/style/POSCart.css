@@ -1,0 +1,191 @@
+/* src/components/pharmacist/pos/POSCart.css */
+
+.pos-cart-container {
+  border-radius: 1rem;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background-color: rgba(255, 255, 255, 0.05);
+  padding: 1.5rem;
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+  backdrop-filter: blur(16px);
+}
+
+.pos-cart-header {
+  font-size: 1.125rem;
+  font-weight: 600;
+  color: white;
+  margin-bottom: 1rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.pos-cart-icon {
+  font-size: 1.125rem;
+}
+
+.pos-cart-title {
+  font-size: 1.125rem;
+  font-weight: 600;
+  color: white;
+}
+
+.pos-cart-empty {
+  text-align: center;
+  padding: 2rem 0;
+  color: #94a3b8;
+}
+
+.pos-cart-empty-message {
+  color: #94a3b8;
+}
+
+.pos-cart-items {
+  gap: 0.5rem;
+  max-height: 15rem;
+  overflow-y: auto;
+}
+
+.pos-cart-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.75rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  transition: background-color 0.15s ease-in-out;
+}
+
+.pos-cart-item:hover {
+  background-color: rgba(255, 255, 255, 0.05);
+}
+
+.pos-cart-item-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.pos-cart-item-name {
+  font-weight: 500;
+  color: white;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.pos-cart-item-details {
+  font-size: 0.75rem;
+  color: #94a3b8;
+}
+
+.pos-cart-quantity-section {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-left: 0.5rem;
+}
+
+.pos-quantity-button {
+  padding: 0.25rem;
+  border-radius: 50%;
+  color: #60a5fa;
+  transition: background-color 0.15s ease-in-out;
+}
+
+.pos-quantity-button:hover {
+  background-color: rgba(96, 165, 250, 0.2);
+}
+
+.pos-quantity-button.disabled {
+  color: #64748b;
+  cursor: not-allowed;
+}
+
+.pos-quantity-button:hover:not(.disabled) {
+  cursor: pointer;
+}
+
+.pos-quantity-input {
+  width: 3rem;
+  text-align: center;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 0.25rem;
+  background-color: rgba(255, 255, 255, 0.05);
+  color: white;
+  font-size: 0.875rem;
+}
+
+.pos-quantity-input:focus {
+  outline: none;
+  box-shadow: 0 0 0 2px #3b82f6;
+}
+
+.pos-delete-button {
+  padding: 0.25rem;
+  color: #f87171;
+  border-radius: 50%;
+  transition: background-color 0.15s ease-in-out;
+  cursor: pointer;
+}
+
+.pos-delete-button:hover {
+  background-color: rgba(248, 113, 113, 0.2);
+}
+
+.pos-cart-total-section {
+  margin-top: 1rem;
+  padding-top: 1rem;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.pos-cart-total-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.pos-cart-total-label {
+  font-size: 1.125rem;
+  font-weight: 700;
+  color: white;
+}
+
+.pos-cart-total-amount {
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: #4ade80;
+}
+
+/* Scrollbar styling for cart items */
+.pos-cart-items::-webkit-scrollbar {
+  width: 6px;
+}
+
+.pos-cart-items::-webkit-scrollbar-track {
+  background-color: #334155;
+  border-radius: 0.25rem;
+}
+
+.pos-cart-items::-webkit-scrollbar-thumb {
+  background-color: #64748b;
+  border-radius: 0.25rem;
+}
+
+.pos-cart-items::-webkit-scrollbar-thumb:hover {
+  background-color: #94a3b8;
+}
+
+/* Responsive adjustments */
+@media (max-width: 640px) {
+  .pos-cart-item {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.5rem;
+  }
+
+  .pos-cart-quantity-section {
+    margin-left: 0;
+  }
+
+  .pos-cart-item-details {
+    font-size: 0.625rem;
+  }
+}

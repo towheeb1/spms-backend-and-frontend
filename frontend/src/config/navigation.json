@@ -1,0 +1,102 @@
+{
+  "Pharmacist": {
+    "brand": {
+      "title": "SPMS",
+      "subtitle": "منصة إدارة الصيدلية"
+    },
+    "primary": [
+      {
+        "to": "/dashboard",
+        "label": "اللوحة",
+        "description": "نظرة شاملة على الأداء",
+        "details": [
+          { "label": "مؤشرات اليوم", "to": "/dashboard/today" },
+          { "label": "تقارير الفروع", "to": "/dashboard/branches" },
+          { "label": "تحليلات المبيعات", "to": "/dashboard/analytics" }
+        ]
+      },
+      {
+        "to": "/pos",
+        "label": "نقطة البيع",
+        "description": "إدارة المبيعات اليومية",
+        "details": [
+          { "label": "كل الفواتير", "to": "/pos/invoices" },
+          { "label": "معاملات مسودة", "to": "/pos/drafts" },
+          { "label": "المبيعات المعتمدة", "to": "/pos/posted" },
+          { "label": "إيصالات الطباعة", "to": "/pos/receipts" },
+          { "label": "تقارير المبيعات", "to": "/pos/reports" },
+          { "label": "الورديات", "to": "/pos/shifts" }
+        ]
+      },
+      
+      {
+        "to": "/inventory",
+        "label": "المخزون",
+        "description": "تفاصيل الأصناف والحركات",
+        "details": [
+          { "label": "الرصيد الحالي", "to": "/inventory/stock" },
+          { "label": "التسويات", "to": "/inventory/adjustments" },
+          { "label": "حركات المخزون", "to": "/inventory/movements" }
+        ]
+      },
+      {
+        "to": "/suppliers",
+        "label": "الموردون",
+        "description": "علاقات الموردين والطلبيات",
+        "details": [
+          { "label": "سجل الموردين", "to": "/suppliers" },
+          { "label": "أوامر الشراء", "to": "/suppliers/purchase-orders" },
+          { "label": "التقييم المالي", "to": "/suppliers/finance" }
+        ]
+      },
+      {
+        "to": "/users",
+        "label": "المستخدمون",
+        "description": "صلاحيات الفريق",
+        "details": [
+          { "label": "قائمة المستخدمين", "to": "/users/list" },
+          { "label": "إدارة الأدوار", "to": "/users/roles" },
+          { "label": "سجل النشاط", "to": "/users/audit" }
+        ]
+      },
+      {
+        "to": "/reports",
+        "label": "التقارير والإحصائيات",
+        "description": "تقارير المبيعات والأرباح",
+        "icon": "chart"
+      },
+      {
+        "to": "/profile",
+        "label": "الملف الشخصي",
+        "description": "إعدادات الحساب",
+        "icon": "settings"
+      }
+    ]
+  },
+  "Doctor": {
+    "brand": {
+      "title": "SPMS",
+      "subtitle": "لوحة الطبيب"
+    },
+    "primary": [
+      { "to": "/doctor", "label": "الرئيسية" },
+      { "to": "/doctor/conditions", "label": "أمراض المريض" },
+      { "to": "/doctor/prescribe", "label": "وصفة جديدة" },
+      { "to": "/doctor/prescriptions", "label": "الوصفات" },
+      { "to": "/doctor/visits", "label": "الزيارات" },
+      { "to": "/doctor/labs", "label": "التحاليل" },
+      { "to": "/doctor/notifications", "label": "الإشعارات" }
+    ],
+    "panels": []
+  },
+  "Patient": {
+    "brand": {
+      "title": "SPMS",
+      "subtitle": "منصة المريض"
+    },
+    "primary": [
+      { "to": "/patient", "label": "الرئيسية" }
+    ],
+    "panels": []
+  }
+}

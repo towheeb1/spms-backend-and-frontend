@@ -1,0 +1,525 @@
+/* src/components/pharmacist/pos/shared.css */
+
+/* Common POS styles */
+.pos-container {
+  display: grid;
+  grid-template-columns: repeat(1, minmax(0, 1fr));
+  gap: 1.5rem;
+}
+
+@media (min-width: 1024px) {
+  .pos-container {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+.pos-main-section {
+  grid-column: span 2 / span 2;
+  gap: 1rem;
+}
+
+@media (max-width: 1023px) {
+  .pos-main-section {
+    grid-column: span 1 / span 1;
+  }
+}
+
+.pos-sidebar {
+  gap: 1rem;
+}
+
+/* Modal overlay */
+.pos-modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 50;
+}
+
+/* Card styles */
+.pos-card {
+  border-radius: 1rem;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background-color: rgba(255, 255, 255, 0.05);
+  padding: 1.5rem;
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+  backdrop-filter: blur(16px);
+}
+
+.pos-card-dark {
+  background-color: #1e293b;
+  border-radius: 1rem;
+  padding: 1rem;
+}
+
+.pos-card-dark-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1rem;
+}
+
+.pos-card-dark-title {
+  font-size: 1.125rem;
+  font-weight: 600;
+  color: white;
+}
+
+.pos-card-dark-subtitle {
+  font-size: 0.875rem;
+  color: #94a3b8;
+}
+
+/* Button styles */
+.pos-button-primary {
+  padding: 1rem;
+  background-color: #2563eb;
+  color: white;
+  border-radius: 0.5rem;
+  transition: background-color 0.15s ease-in-out;
+}
+
+.pos-button-primary:hover {
+  background-color: #1d4ed8;
+}
+
+.pos-button-success {
+  padding: 1rem;
+  background-color: #16a34a;
+  color: white;
+  border-radius: 0.5rem;
+  transition: background-color 0.15s ease-in-out;
+}
+
+.pos-button-success:hover {
+  background-color: #15803d;
+}
+
+.pos-button-secondary {
+  padding: 0.75rem;
+  background-color: #334155;
+  color: #cbd5e1;
+  border-radius: 0.5rem;
+  font-size: 0.875rem;
+  transition: background-color 0.15s ease-in-out;
+}
+
+.pos-button-secondary:hover {
+  background-color: #475569;
+}
+
+.pos-button-ghost {
+  padding: 0.75rem;
+  background-color: #334155;
+  color: #cbd5e1;
+  border-radius: 0.5rem;
+  font-size: 0.875rem;
+  font-weight: 500;
+  transition: background-color 0.15s ease-in-out;
+}
+
+.pos-button-ghost:hover {
+  background-color: #475569;
+}
+
+.pos-button-category {
+  padding: 0.75rem;
+  border-radius: 0.5rem;
+  font-size: 0.875rem;
+  font-weight: 500;
+  transition: all 0.15s ease-in-out;
+}
+
+.pos-button-category-all {
+  background-color: #2563eb;
+  color: white;
+}
+
+.pos-button-category-selected {
+  background-color: #16a34a;
+  color: white;
+}
+
+.pos-button-category-unselected {
+  background-color: #334155;
+  color: #cbd5e1;
+}
+
+.pos-button-category-unselected:hover {
+  background-color: #475569;
+}
+
+/* Input styles */
+.pos-input-search {
+  width: 100%;
+  padding: 0.75rem 1rem;
+  background-color: #334155;
+  border: 1px solid #475569;
+  border-radius: 0.5rem;
+  color: white;
+  transition: all 0.15s ease-in-out;
+}
+
+.pos-input-search::placeholder {
+  color: #94a3b8;
+}
+
+.pos-input-search:focus {
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.2);
+}
+
+/* Loading styles */
+.pos-loading-spinner {
+  animation: spin 1s linear infinite;
+  border-radius: 50%;
+  height: 1rem;
+  width: 1rem;
+  border-bottom: 2px solid #3b82f6;
+}
+
+.pos-loading-center {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 2rem 0;
+}
+
+.pos-loading-large {
+  animation: spin 1s linear infinite;
+  border-radius: 50%;
+  height: 2rem;
+  width: 2rem;
+  border-bottom: 2px solid #3b82f6;
+}
+
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* Status indicators */
+.pos-status-in-stock {
+  background-color: rgba(22, 163, 74, 0.2);
+  color: #86efac;
+}
+
+.pos-status-out-of-stock {
+  background-color: rgba(239, 68, 68, 0.2);
+  color: #fca5a5;
+}
+
+.pos-status-badge {
+  font-size: 0.75rem;
+  padding: 0.25rem 0.75rem;
+  border-radius: 9999px;
+  white-space: nowrap;
+}
+
+/* Grid layouts */
+.pos-medicine-grid {
+  display: grid;
+  grid-template-columns: repeat(1, minmax(0, 1fr));
+  gap: 1rem;
+  max-height: 28rem;
+  overflow-y: auto;
+  padding-right: 0.25rem;
+}
+
+@media (min-width: 768px) {
+  .pos-medicine-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (min-width: 1024px) {
+  .pos-medicine-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+@media (min-width: 1280px) {
+  .pos-medicine-grid {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+}
+
+.pos-medicine-card {
+  background-color: rgba(30, 41, 59, 0.8);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 1rem;
+  padding: 1.25rem;
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  transition: all 0.15s ease-in-out;
+}
+
+.pos-medicine-card:hover {
+  border-color: rgba(74, 222, 128, 0.6);
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(34, 197, 94, 0.2);
+}
+
+.pos-medicine-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 0.75rem;
+}
+
+.pos-medicine-info {
+  min-width: 0;
+  gap: 0.25rem;
+}
+
+.pos-medicine-name {
+  font-size: 1rem;
+  font-weight: 600;
+  color: white;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.pos-medicine-generic {
+  font-size: 0.75rem;
+  color: #94a3b8;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.pos-medicine-tags {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.6875rem;
+  color: #94a3b8;
+}
+
+.pos-medicine-tag {
+  padding: 0.25rem 0.5rem;
+  background-color: rgba(255, 255, 255, 0.05);
+  border-radius: 0.375rem;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.pos-medicine-prices {
+  display: grid;
+  grid-template-columns: repeat(1, minmax(0, 1fr));
+  gap: 0.5rem;
+}
+
+.pos-medicine-price-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-radius: 0.75rem;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background-color: rgba(255, 255, 255, 0.05);
+  padding: 0.75rem;
+  font-size: 0.75rem;
+  color: #e2e8f0;
+}
+
+.pos-medicine-price-label {
+  font-weight: 500;
+  color: rgba(255, 255, 255, 0.9);
+  font-size: 0.875rem;
+}
+
+.pos-medicine-price-hint {
+  font-size: 0.6875rem;
+  color: #94a3b8;
+}
+
+.pos-medicine-price-value {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: #86efac;
+}
+
+.pos-medicine-price-empty {
+  border-radius: 0.75rem;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background-color: rgba(255, 255, 255, 0.05);
+  padding: 0.75rem;
+  font-size: 0.75rem;
+  color: #94a3b8;
+}
+
+.pos-medicine-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.pos-medicine-details {
+  font-size: 0.75rem;
+  color: #94a3b8;
+  gap: 0.25rem;
+}
+
+.pos-medicine-add-button {
+  padding: 1rem;
+  border-radius: 0.5rem;
+  background-color: rgba(22, 163, 74, 0.8);
+  color: white;
+  font-size: 0.875rem;
+  font-weight: 500;
+  transition: background-color 0.15s ease-in-out;
+}
+
+.pos-medicine-add-button:hover {
+  background-color: #16a34a;
+}
+
+/* Cart styles */
+.pos-cart-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.75rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  transition: background-color 0.15s ease-in-out;
+}
+
+.pos-cart-item:hover {
+  background-color: rgba(255, 255, 255, 0.05);
+}
+
+.pos-cart-item-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.pos-cart-item-name {
+  font-weight: 500;
+  color: white;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.pos-cart-item-details {
+  font-size: 0.75rem;
+  color: #94a3b8;
+}
+
+.pos-cart-quantity-controls {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-left: 0.5rem;
+}
+
+.pos-quantity-button {
+  padding: 0.25rem;
+  border-radius: 50%;
+  color: #60a5fa;
+  transition: background-color 0.15s ease-in-out;
+}
+
+.pos-quantity-button:hover {
+  background-color: rgba(96, 165, 250, 0.2);
+}
+
+.pos-quantity-button-disabled {
+  color: #64748b;
+  cursor: not-allowed;
+}
+
+.pos-quantity-input {
+  width: 3rem;
+  text-align: center;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 0.25rem;
+  background-color: rgba(255, 255, 255, 0.05);
+  color: white;
+  font-size: 0.875rem;
+}
+
+.pos-quantity-input:focus {
+  outline: none;
+  box-shadow: 0 0 0 2px #3b82f6;
+}
+
+.pos-delete-button {
+  padding: 0.25rem;
+  color: #f87171;
+  border-radius: 50%;
+  transition: background-color 0.15s ease-in-out;
+}
+
+.pos-delete-button:hover {
+  background-color: rgba(248, 113, 113, 0.2);
+}
+
+.pos-cart-total {
+  margin-top: 1rem;
+  padding-top: 1rem;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.pos-cart-total-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.pos-cart-total-label {
+  font-size: 1.125rem;
+  font-weight: 700;
+  color: white;
+}
+
+.pos-cart-total-value {
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: #4ade80;
+}
+
+/* Empty state */
+.pos-empty-state {
+  text-align: center;
+  padding: 2rem 0;
+  color: #94a3b8;
+}
+
+/* Error state */
+.pos-error-state {
+  text-align: center;
+  padding: 2rem 0;
+}
+
+.pos-error-icon {
+  color: #f87171;
+  margin-bottom: 1rem;
+}
+
+.pos-error-message {
+  color: #94a3b8;
+  margin-bottom: 1rem;
+}
+
+/* Debug info */
+.pos-debug-info {
+  margin-bottom: 0.75rem;
+  padding: 0.5rem;
+  background-color: #0f172a;
+  border-radius: 0.25rem;
+  font-size: 0.75rem;
+  color: #64748b;
+}

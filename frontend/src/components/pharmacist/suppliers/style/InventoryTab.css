@@ -1,0 +1,205 @@
+/* src/components/pharmacist/suppliers/InventoryTab.css */
+
+.inventory-tab-container {
+  display: grid;
+  gap: 1rem;
+}
+
+.inventory-tab-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.inventory-tab-title {
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: white;
+}
+
+.inventory-tab-stats {
+  font-size: 0.875rem;
+  color: #9ca3af;
+}
+
+.inventory-tab-cards-grid {
+  display: grid;
+  grid-template-columns: repeat(1, minmax(0, 1fr));
+  gap: 1rem;
+}
+
+@media (min-width: 768px) {
+  .inventory-tab-cards-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (min-width: 1024px) {
+  .inventory-tab-cards-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+.inventory-tab-card {
+  padding: 1rem;
+  border-radius: 0.75rem;
+  background-color: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+}
+
+.inventory-tab-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 0.75rem;
+}
+
+.inventory-tab-item-info {
+  min-width: 0;
+}
+
+.inventory-tab-item-name {
+  font-weight: 500;
+  color: white;
+  font-size: 1rem;
+}
+
+.inventory-tab-item-category {
+  font-size: 0.75rem;
+  opacity: 0.7;
+  color: white;
+}
+
+.inventory-tab-stock-badge {
+  padding: 0.5rem 0.75rem;
+  border-radius: 9999px;
+  font-size: 0.75rem;
+  white-space: nowrap;
+}
+
+.inventory-tab-stock-in {
+  background-color: rgba(34, 197, 94, 0.2);
+  color: #86efac;
+}
+
+.inventory-tab-stock-out {
+  background-color: rgba(239, 68, 68, 0.2);
+  color: #fca5a5;
+}
+
+.inventory-tab-item-details {
+  gap: 0.5rem;
+  font-size: 0.875rem;
+}
+
+.inventory-tab-detail-row {
+  display: flex;
+  justify-content: space-between;
+}
+
+.inventory-tab-detail-label {
+  opacity: 0.7;
+  color: white;
+}
+
+.inventory-tab-detail-value {
+  color: white;
+}
+
+.inventory-tab-warning {
+  margin-top: 0.75rem;
+  padding: 0.5rem;
+  border-radius: 0.5rem;
+  background-color: rgba(239, 68, 68, 0.1);
+  border: 1px solid rgba(239, 68, 68, 0.2);
+}
+
+.inventory-tab-warning-text {
+  font-size: 0.75rem;
+  color: #fca5a5;
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+}
+
+.inventory-tab-empty-state {
+  text-align: center;
+  padding: 3rem 0;
+  color: #94a3b8;
+}
+
+.inventory-tab-empty-icon {
+  font-size: 4rem;
+  margin-bottom: 1rem;
+}
+
+.inventory-tab-empty-title {
+  font-size: 1.25rem;
+  font-weight: 600;
+  margin-bottom: 0.5rem;
+  color: white;
+}
+
+.inventory-tab-empty-description {
+  font-size: 0.875rem;
+  color: #9ca3af;
+}
+
+/* Responsive adjustments */
+@media (max-width: 640px) {
+  .inventory-tab-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.5rem;
+  }
+
+  .inventory-tab-title {
+    font-size: 1.125rem;
+  }
+
+  .inventory-tab-cards-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .inventory-tab-card {
+    padding: 0.75rem;
+  }
+
+  .inventory-tab-card-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.5rem;
+  }
+
+  .inventory-tab-item-name {
+    font-size: 0.875rem;
+  }
+
+  .inventory-tab-item-category {
+    font-size: 0.6875rem;
+  }
+
+  .inventory-tab-stock-badge {
+    padding: 0.25rem 0.5rem;
+    font-size: 0.6875rem;
+  }
+
+  .inventory-tab-item-details {
+    font-size: 0.75rem;
+  }
+
+  .inventory-tab-empty-state {
+    padding: 2rem 0;
+  }
+
+  .inventory-tab-empty-icon {
+    font-size: 3rem;
+    margin-bottom: 0.75rem;
+  }
+
+  .inventory-tab-empty-title {
+    font-size: 1.125rem;
+    margin-bottom: 0.25rem;
+  }
+}

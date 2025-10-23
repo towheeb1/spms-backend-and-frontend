@@ -1,0 +1,246 @@
+/* Medicine Table Styles */
+.medicine-card-row {
+  background-color: rgba(30, 41, 59, 0.8);
+  border-bottom: 1px solid rgba(51, 65, 85, 0.5);
+  color: #f1f5f9;
+  transition: background-color 0.2s ease;
+}
+
+.medicine-card-row:hover {
+  background-color: rgba(51, 65, 85, 0.6);
+}
+
+.medicine-name-cell {
+  padding: 16px;
+  text-align: right;
+  font-size: 0.95rem;
+  min-width: 200px;
+}
+
+.medicine-name {
+  font-weight: 600;
+  display: block;
+  margin-bottom: 4px;
+  color: #e2e8f0;
+}
+
+.medicine-category {
+  font-size: 0.75rem;
+  color: #94a3b8;
+  background-color: rgba(51, 65, 85, 0.8);
+  padding: 2px 6px;
+  border-radius: 4px;
+  display: inline-block;
+}
+
+.medicine-barcode {
+  font-size: 0.75rem;
+  color: #64748b;
+  margin-top: 4px;
+}
+
+.medicine-stock-cell,
+.medicine-expiry-cell,
+.medicine-quantity-cell,
+.medicine-price-cell {
+  padding: 16px 12px;
+  text-align: center;
+  font-size: 0.9rem;
+  vertical-align: middle;
+}
+
+.medicine-stock-cell {
+  width: 100px;
+}
+
+.medicine-price-cell,
+.medicine-expiry-cell {
+  width: 120px;
+  font-family: 'Courier New', monospace;
+}
+
+.medicine-quantity-cell {
+  width: 80px;
+  font-weight: 600;
+}
+
+.stock-badge {
+  padding: 6px 12px;
+  border-radius: 12px;
+  font-size: 0.8rem;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.stock-in {
+  background-color: rgba(16, 185, 129, 0.9);
+  color: white;
+}
+
+.stock-low {
+  background-color: rgba(245, 158, 11, 0.9);
+  color: #1e293b;
+}
+
+.stock-out {
+  background-color: rgba(220, 38, 38, 0.9);
+  color: white;
+}
+
+.medicine-actions-cell {
+  padding: 16px;
+  text-align: center;
+  width: 100px;
+}
+
+.details-toggle-button,
+.add-to-cart-button {
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 8px;
+  border-radius: 6px;
+  color: #94a3b8;
+  margin: 0 4px;
+  transition: all 0.2s ease;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 32px;
+  min-height: 32px;
+}
+
+.details-toggle-button:hover,
+.add-to-cart-button:hover {
+  background-color: rgba(71, 85, 105, 0.8);
+  color: #e2e8f0;
+  transform: translateY(-1px);
+}
+
+.add-to-cart-button:hover {
+  background-color: rgba(34, 197, 94, 0.2);
+  color: #22c55e;
+}
+
+/* Expanded Row */
+.medicine-expanded-row {
+  background-color: rgba(30, 41, 59, 0.9);
+}
+
+.medicine-expanded-cell {
+  padding: 0 !important;
+  border-top: 1px solid rgba(51, 65, 85, 0.5);
+}
+
+.medicine-expanded-details {
+  padding: 20px;
+  border-radius: 8px;
+  background-color: rgba(15, 23, 42, 0.3);
+  margin: 8px 0;
+}
+
+.expanded-section {
+  margin-bottom: 20px;
+}
+
+.expanded-section:last-child {
+  margin-bottom: 0;
+}
+
+.expanded-title {
+  font-size: 1rem;
+  font-weight: 600;
+  margin: 0 0 12px 0;
+  color: #e2e8f0;
+  padding-bottom: 8px;
+  border-bottom: 1px solid rgba(59, 130, 246, 0.3);
+}
+
+.expanded-grid,
+.pricing-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 12px;
+}
+
+.expanded-row,
+.pricing-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px 12px;
+  background-color: rgba(255, 255, 255, 0.02);
+  border-radius: 6px;
+  border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.expanded-label,
+.pricing-label {
+  font-weight: 500;
+  color: #94a3b8;
+  font-size: 0.85rem;
+}
+
+.expanded-value,
+.pricing-value {
+  font-weight: 600;
+  color: #e2e8f0;
+  direction: rtl;
+  font-family: 'Courier New', monospace;
+}
+
+.pricing-hint {
+  font-size: 0.7rem;
+  color: #64748b;
+  margin-right: 8px;
+  font-style: italic;
+}
+
+/* Responsive adjustments for table */
+@media (max-width: 768px) {
+  .medicine-name-cell {
+    min-width: 150px;
+    padding: 12px 8px;
+  }
+
+  .medicine-stock-cell,
+  .medicine-expiry-cell,
+  .medicine-quantity-cell,
+  .medicine-price-cell {
+    padding: 12px 6px;
+    font-size: 0.8rem;
+  }
+
+  .medicine-actions-cell {
+    padding: 12px 6px;
+    width: 80px;
+  }
+
+  .details-toggle-button,
+  .add-to-cart-button {
+    padding: 6px !important;
+    margin: 0 2px !important;
+    min-width: 28px;
+    min-height: 28px;
+  }
+
+  .stock-badge {
+    font-size: 0.65rem !important;
+    padding: 3px 6px !important;
+  }
+
+  .medicine-expanded-details {
+    padding: 16px;
+  }
+
+  .expanded-grid,
+  .pricing-grid {
+    grid-template-columns: 1fr;
+    gap: 8px;
+  }
+
+  .expanded-title {
+    font-size: 0.9rem;
+  }
+}

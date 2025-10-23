@@ -1,0 +1,9 @@
+export { default as DoctorLayout } from "./DoctorLayout";
+export { default as DoctorDashboard } from "./DoctorDashboard";
+export { default as DoctorConditions } from "./DoctorConditions";
+export { default as DoctorPrescription } from "./DoctorPrescription";
+export { default as DoctorPrescriptions } from "./DoctorPrescriptions";
+export { default as DoctorVisits } from "./DoctorVisits";
+export { default as DoctorLabs } from "./DoctorLabs";
+export { default as DoctorNotifications } from "./DoctorNotifications";
+export { default as DoctorHome } from "./DoctorHome";
