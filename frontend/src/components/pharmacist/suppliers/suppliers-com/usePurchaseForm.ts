@@ -45,26 +45,27 @@ export function usePurchaseForm({ initialSupplierId = null, suppliers }: UsePurc
   function computeDerivedValues(item: PurchaseItemWithBranch): PurchaseItemWithBranch {
     const quantity = Math.max(0, normalizeNumber(item.quantity));
     const wholesale = Math.max(0, normalizeNumber(item.wholesale_price ?? item.price));
+    const saleCarton = Math.max(0, normalizeNumber(item.carton_price ?? item.wholesale_price ?? item.price));
     const packsPerCarton = Math.max(0, normalizeNumber(item.packs_per_carton));
     const blistersPerPack = Math.max(0, normalizeNumber(item.blisters_per_pack));
     const tabletsPerBlister = Math.max(0, normalizeNumber(item.tablets_per_blister));
 
-    const cartonPrice = wholesale;
-    const retailPrice = packsPerCarton > 0 ? cartonPrice / packsPerCarton : 0;
+    const purchaseCartonPrice = wholesale;
+    const retailPrice = packsPerCarton > 0 ? saleCarton / packsPerCarton : 0;
     const blisterPrice = blistersPerPack > 0 ? retailPrice / blistersPerPack : 0;
     const tabletPrice = tabletsPerBlister > 0 ? blisterPrice / tabletsPerBlister : 0;
 
-    const subtotal = normalizeNumber(quantity * cartonPrice);
+    const subtotal = normalizeNumber(quantity * purchaseCartonPrice);
 
     return {
       ...item,
       quantity,
-      wholesale_price: cartonPrice,
-      carton_price: cartonPrice,
+      wholesale_price: purchaseCartonPrice,
+      carton_price: saleCarton,
       retail_price: retailPrice,
       blister_price: blisterPrice,
       tablet_price: tabletPrice,
-      price: cartonPrice,
+      price: purchaseCartonPrice,
       subtotal,
     };
   }

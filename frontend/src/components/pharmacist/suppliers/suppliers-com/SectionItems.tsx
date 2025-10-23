@@ -42,6 +42,7 @@ const calculatePrices = (item: PurchaseItemWithBranch) => {
   const {
     quantity = 0,
     wholesale_price = 0,
+    carton_price = 0,
     packs_per_carton = 1,
     blisters_per_pack = 1,
     tablets_per_blister = 1,
@@ -62,30 +63,33 @@ const calculatePrices = (item: PurchaseItemWithBranch) => {
   }
 
   // حساب سعر الوحدة (الكرتون)
-  const pricePerCarton = Number(wholesale_price) || 0;
+  const purchaseCartonPrice = Number(wholesale_price) || 0;
+  const saleCartonPrice = Number(carton_price ?? wholesale_price) || 0;
 
-  // حساب سعر الباكيت (التجزئة)
+  const purchasePackPrice = packs_per_carton > 0 ? purchaseCartonPrice / packs_per_carton : 0;
+  const purchaseBlisterPrice =
+    packs_per_carton > 0 && blisters_per_pack > 0 ? purchasePackPrice / blisters_per_pack : 0;
+
+  // حساب أسعار البيع بناءً على سعر بيع الكرتون
   if (packs_per_carton > 0) {
-    retailPrice = pricePerCarton / packs_per_carton;
+    retailPrice = saleCartonPrice / packs_per_carton;
   }
 
-  // حساب سعر الشريط
   if (packs_per_carton > 0 && blisters_per_pack > 0) {
     blisterPrice = retailPrice / blisters_per_pack;
   }
 
-  // حساب سعر الحبة
   if (blisters_per_pack > 0 && tablets_per_blister > 0) {
     tabletPrice = blisterPrice / tablets_per_blister;
   }
 
-  // حساب المجموع (السعر الإجمالي للطلب)
+  // حساب المجموع بناءً على سعر الشراء
   if (unit === "carton") {
-    subtotal = quantity * pricePerCarton;
+    subtotal = quantity * purchaseCartonPrice;
   } else if (unit === "pack") {
-    subtotal = quantity * retailPrice;
+    subtotal = quantity * purchasePackPrice;
   } else if (unit === "blister") {
-    subtotal = quantity * blisterPrice;
+    subtotal = quantity * purchaseBlisterPrice;
   }
 
   return {
@@ -237,6 +241,21 @@ export function SectionItems({ items, currency, branchesOptions, onAdd, onRemove
                       onChange={(e) => onUpdate(index, "wholesale_price", Number(e.target.value) || 0)}
                       min={0}
                       required
+                    />
+                    <FiDollarSign className="absolute right-2 top-1/2 -translate-y-1/2 text-slate-400" size={16} />
+                  </div>
+                </Field>
+
+                {/* سعر بيع الكرتون */}
+                <Field label="سعر بيع الكرتون">
+                  <div className="relative">
+                    <input
+                      type="number"
+                      placeholder="سعر بيع الكرتون"
+                      className="input w-full pr-8"
+                      value={item.carton_price || ""}
+                      onChange={(e) => onUpdate(index, "carton_price", Number(e.target.value) || 0)}
+                      min={0}
                     />
                     <FiDollarSign className="absolute right-2 top-1/2 -translate-y-1/2 text-slate-400" size={16} />
                   </div>
