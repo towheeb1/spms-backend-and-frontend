@@ -20,6 +20,8 @@
         "label": "نقطة البيع",
         "description": "إدارة المبيعات اليومية",
         "details": [
+          { "label": "لوحه نقطه تحكم البيع", "to": "/pos/dashboard/dashboardsel" },
+          { "label": " ادارة المحاسبه", "to": "/pos/AccountingDepartment" },
           { "label": "كل الفواتير", "to": "/pos/invoices" },
           { "label": "معاملات مسودة", "to": "/pos/drafts" },
           { "label": "المبيعات المعتمدة", "to": "/pos/posted" },

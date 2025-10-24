@@ -1,6 +1,52 @@
 // backend/src/controllers/purchases/create.js
 import { pool } from "../../db.js";
 
+const UNIT_KEYS = ["carton", "pack", "blister", "tablet"];
+
+function normalizeUnit(unit, fallback = "carton") {
+  if (!unit) return fallback;
+  const value = String(unit).toLowerCase();
+  return UNIT_KEYS.includes(value) ? value : fallback;
+}
+
+function getUnitMultiplier(unit, config) {
+  const packsPerCarton = Number(config?.packs_per_carton) || 1;
+  const blistersPerPack = Number(config?.blisters_per_pack) || 1;
+  const tabletsPerBlister = Number(config?.tablets_per_blister) || 1;
+
+  switch (normalizeUnit(unit)) {
+    case "carton":
+      return packsPerCarton * blistersPerPack * tabletsPerBlister || 1;
+    case "pack":
+      return blistersPerPack * tabletsPerBlister || 1;
+    case "blister":
+      return tabletsPerBlister || 1;
+    default:
+      return 1;
+  }
+}
+
+function computeBaseQuantity(unit, qty, config) {
+  const quantity = Number(qty) || 0;
+  if (!quantity) return 0;
+  const multiplier = getUnitMultiplier(unit, config);
+  return quantity * multiplier;
+}
+
+function unitLabel(unit) {
+  switch (normalizeUnit(unit)) {
+    case "carton":
+      return "كرتون";
+    case "pack":
+      return "باكت";
+    case "blister":
+      return "شريط";
+    case "tablet":
+    default:
+      return "حبة";
+  }
+}
+
 export async function createPurchase(req, res) {
   try {
     const pharmacy_id = req.user?.pharmacy_id;
@@ -40,22 +86,26 @@ export async function createPurchase(req, res) {
     const buildItem = (raw, batchNo) => {
       const quantity = normalizeNumber(raw.quantity, 0);
       const wholesale = normalizeNumber(raw.wholesale_price ?? raw.price ?? 0, 0);
+      const saleCarton = normalizeNumber(
+        raw.carton_price ?? raw.sale_carton_price ?? raw.cartonPrice ?? raw.retail_carton_price ?? wholesale,
+        wholesale
+      );
       const packsPerCarton = normalizeNumber(raw.packs_per_carton, 0);
       const blistersPerPack = normalizeNumber(raw.blisters_per_pack, 0);
       const tabletsPerBlister = normalizeNumber(raw.tablets_per_blister, 0);
 
-      const cartonPrice = wholesale;
-      const retailPrice = packsPerCarton > 0 ? cartonPrice / packsPerCarton : 0;
+      const purchaseCartonPrice = wholesale;
+      const retailPrice = packsPerCarton > 0 ? saleCarton / packsPerCarton : 0;
       const blisterPrice = blistersPerPack > 0 ? retailPrice / blistersPerPack : 0;
       const tabletPrice = tabletsPerBlister > 0 ? blisterPrice / tabletsPerBlister : 0;
 
-      const subtotal = quantity * cartonPrice;
+      const subtotal = quantity * purchaseCartonPrice;
       const itemExpiry = raw.expiry_date || expiry_date || null;
 
       return {
     medicine_id: raw.medicine_id ? Number(raw.medicine_id) : null,
     qty: quantity,
-    unit_price: cartonPrice,
+    unit_price: purchaseCartonPrice,
     line_total: subtotal,
     item_name: normalizeString(raw.name),
     supplier_item_code: normalizeString(raw.supplier_item_code),
@@ -70,9 +120,9 @@ export async function createPurchase(req, res) {
     taxes: raw.taxes ? JSON.stringify(raw.taxes) : null,
     extra_charges_share: normalizeNumber(raw.extra_charges_share, null),
     category: normalizeString(raw.category),
-    wholesale_price: cartonPrice,
+    wholesale_price: purchaseCartonPrice,
     retail_price: retailPrice,
-    carton_price: cartonPrice,
+    carton_price: saleCarton,
     blister_price: blisterPrice,
     tablet_price: tabletPrice,
     packs_per_carton: packsPerCarton || null,
@@ -469,18 +519,29 @@ export async function receivePurchase(req, res) {
 
       // البحث عن الدواء في جدول medicines
       const [[existingMedicine]] = await connection.query(
-        `SELECT id, stock_qty, price FROM medicines WHERE pharmacy_id = ? AND (barcode = ? OR name = ?)`,
+        `SELECT id, stock_qty, stock_base_qty, price, packs_per_carton, blisters_per_pack, tablets_per_blister
+           FROM medicines
+          WHERE pharmacy_id = ? AND (barcode = ? OR name = ?)
+          LIMIT 1`,
         [pharmacy_id, purchaseItem.barcode || '', purchaseItem.item_name]
       );
 
       let medicineId;
+      const unitType = normalizeUnit(purchaseItem.unit);
+      const baseQtyChange = computeBaseQuantity(unitType, receivedItem.received_qty, purchaseItem);
+      const unitDisplayLabel = unitLabel(unitType);
+
 if (existingMedicine) {
   // تحديث كمية المخزون + الفئة + الأسعار للدواء الموجود
   medicineId = existingMedicine.id;
+  const currentBaseStock = Number(existingMedicine.stock_base_qty ?? existingMedicine.stock_qty ?? 0);
+  const nextBaseStock = currentBaseStock + baseQtyChange;
+
   await connection.query(
     `UPDATE medicines 
      SET 
-        stock_qty = stock_qty + ?,
+        stock_qty = ?,
+        stock_base_qty = ?,
         price = ?,
         batch_no = ?,
         expiry_date = ?,
@@ -494,11 +555,12 @@ if (existingMedicine) {
         tablets_per_blister = ?
      WHERE id = ?`,
     [
-      receivedItem.received_qty,
+      nextBaseStock,
+      nextBaseStock,
       purchaseItem.unit_price,
       receivedItem.batch_no || purchaseItem.batch_no || null,
       receivedItem.expiry_date || purchaseItem.expiry_date || null,
-      purchaseItem.category, // ← الفئة
+      purchaseItem.category,
       purchaseItem.retail_price,
       purchaseItem.carton_price,
       purchaseItem.blister_price,
@@ -509,33 +571,194 @@ if (existingMedicine) {
       medicineId
     ]
   );
+
+  await connection.query(
+    `INSERT INTO inventory_movements (
+        medicine_id,
+        qty_change,
+        reason,
+        ref_type,
+        ref_id,
+        notes,
+        pharmacy_id,
+        unit_type,
+        unit_label,
+        unit_qty,
+        base_qty_change,
+        balance_after_base,
+        ref_number
+     ) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)`,
+    [
+      medicineId,
+      baseQtyChange,
+      "purchase",
+      "purchase_order",
+      id,
+      null,
+      pharmacy_id,
+      unitType,
+      unitDisplayLabel,
+      Number(receivedItem.received_qty || 0),
+      baseQtyChange,
+      nextBaseStock,
+      `PO-${id}`
+    ]
+  );
 } else {
-  // إنشاء دواء جديد مع الفئة والأسعار
-  const [result] = await connection.query(
-  `INSERT INTO medicines (
-      name, barcode, price, stock_qty, batch_no, expiry_date, pharmacy_id,
-      category, retail_price, carton_price, blister_price, tablet_price,
-      packs_per_carton, blisters_per_pack, tablets_per_blister
-   ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-  [
-    purchaseItem.item_name,
-    purchaseItem.barcode || null,
-    purchaseItem.unit_price,
-    receivedItem.received_qty,
-    receivedItem.batch_no || purchaseItem.batch_no || null,
-    purchaseItem.expiry_date || receivedItem.expiry_date || null, // ← الأولوية لـ purchaseItem
-    pharmacy_id,
-    purchaseItem.category,
-    purchaseItem.retail_price,
-    purchaseItem.carton_price,
-    purchaseItem.blister_price,
-    purchaseItem.tablet_price,
-    purchaseItem.packs_per_carton,
-    purchaseItem.blisters_per_pack,
-    purchaseItem.tablets_per_blister
-  ]
-);
-  medicineId = result.insertId;
+  // إنشاء دواء جديد مع الفئة والأسعار (مع معالجة تكرار الباركود)
+  const initialBaseStock = baseQtyChange;
+  try {
+    const [result] = await connection.query(
+      `INSERT INTO medicines (
+          name, barcode, price, stock_qty, stock_base_qty, batch_no, expiry_date, pharmacy_id,
+          category, retail_price, carton_price, blister_price, tablet_price,
+          packs_per_carton, blisters_per_pack, tablets_per_blister
+       ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      [
+        purchaseItem.item_name,
+        purchaseItem.barcode || null,
+        purchaseItem.unit_price,
+        initialBaseStock,
+        initialBaseStock,
+        receivedItem.batch_no || purchaseItem.batch_no || null,
+        purchaseItem.expiry_date || receivedItem.expiry_date || null,
+        pharmacy_id,
+        purchaseItem.category,
+        purchaseItem.retail_price,
+        purchaseItem.carton_price,
+        purchaseItem.blister_price,
+        purchaseItem.tablet_price,
+        purchaseItem.packs_per_carton,
+        purchaseItem.blisters_per_pack,
+        purchaseItem.tablets_per_blister
+      ]
+    );
+    medicineId = result.insertId;
+
+    await connection.query(
+      `INSERT INTO inventory_movements (
+          medicine_id,
+          qty_change,
+          reason,
+          ref_type,
+          ref_id,
+          notes,
+          pharmacy_id,
+          unit_type,
+          unit_label,
+          unit_qty,
+          base_qty_change,
+          balance_after_base,
+          ref_number
+       ) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)`,
+      [
+        medicineId,
+        baseQtyChange,
+        "purchase",
+        "purchase_order",
+        id,
+        null,
+        pharmacy_id,
+        unitType,
+        unitDisplayLabel,
+        Number(receivedItem.received_qty || 0),
+        baseQtyChange,
+        initialBaseStock,
+        `PO-${id}`
+      ]
+    );
+  } catch (error) {
+    if (error?.code === "ER_DUP_ENTRY" && purchaseItem.barcode) {
+      const [[duplicate]] = await connection.query(
+        `SELECT id, stock_qty, stock_base_qty, pharmacy_id
+           FROM medicines
+          WHERE barcode = ?
+          LIMIT 1`,
+        [purchaseItem.barcode]
+      );
+
+      if (!duplicate) {
+        throw error;
+      }
+
+      if (duplicate.pharmacy_id !== pharmacy_id) {
+        throw new Error(`Barcode ${purchaseItem.barcode} مستخدم في صيدلية أخرى، يرجى استخدام باركود مختلف`);
+      }
+
+      medicineId = duplicate.id;
+      const currentBaseStock = Number(duplicate.stock_base_qty ?? duplicate.stock_qty ?? 0);
+      const nextBaseStock = currentBaseStock + baseQtyChange;
+
+      await connection.query(
+        `UPDATE medicines
+            SET stock_qty = ?,
+                stock_base_qty = ?,
+                price = ?,
+                batch_no = ?,
+                expiry_date = ?,
+                category = ?,
+                retail_price = ?,
+                carton_price = ?,
+                blister_price = ?,
+                tablet_price = ?,
+                packs_per_carton = ?,
+                blisters_per_pack = ?,
+                tablets_per_blister = ?
+          WHERE id = ?`,
+        [
+          nextBaseStock,
+          nextBaseStock,
+          purchaseItem.unit_price,
+          receivedItem.batch_no || purchaseItem.batch_no || null,
+          receivedItem.expiry_date || purchaseItem.expiry_date || null,
+          purchaseItem.category,
+          purchaseItem.retail_price,
+          purchaseItem.carton_price,
+          purchaseItem.blister_price,
+          purchaseItem.tablet_price,
+          purchaseItem.packs_per_carton,
+          purchaseItem.blisters_per_pack,
+          purchaseItem.tablets_per_blister,
+          duplicate.id
+        ]
+      );
+
+      await connection.query(
+        `INSERT INTO inventory_movements (
+            medicine_id,
+            qty_change,
+            reason,
+            ref_type,
+            ref_id,
+            notes,
+            pharmacy_id,
+            unit_type,
+            unit_label,
+            unit_qty,
+            base_qty_change,
+            balance_after_base,
+            ref_number
+         ) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)`,
+        [
+          duplicate.id,
+          baseQtyChange,
+          "purchase",
+          "purchase_order",
+          id,
+          null,
+          pharmacy_id,
+          unitType,
+          unitDisplayLabel,
+          Number(receivedItem.received_qty || 0),
+          baseQtyChange,
+          nextBaseStock,
+          `PO-${id}`
+        ]
+      );
+    } else {
+      throw error;
+    }
+  }
 }
 
       await connection.query(

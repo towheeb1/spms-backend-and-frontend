@@ -17,6 +17,14 @@ export interface Med {
   max_stock?: number;
   last_updated?: string;
   created_at?: string;
+  base_qty?: number;
+  last_receipt?: {
+    unit_type?: string | null;
+    unit_label?: string | null;
+    unit_qty?: number;
+    ref_number?: string | null;
+    date?: string | null;
+  } | null;
   items?: Array<{
     id?: number | string | null;
     item_name?: string | null;

@@ -1,6 +1,51 @@
 // backend/src/controllers/pos/sales.js
 import { pool } from "../../db.js";
 
+const UNIT_KEYS = ["carton", "pack", "blister", "tablet"];
+
+function normalizeUnit(unit, fallback = "tablet") {
+  if (!unit) return fallback;
+  const value = String(unit).toLowerCase();
+  return UNIT_KEYS.includes(value) ? value : fallback;
+}
+
+function getUnitMultiplier(unit, config = {}) {
+  const packsPerCarton = Number(config?.packs_per_carton) || 1;
+  const blistersPerPack = Number(config?.blisters_per_pack) || 1;
+  const tabletsPerBlister = Number(config?.tablets_per_blister) || 1;
+
+  switch (normalizeUnit(unit)) {
+    case "carton":
+      return packsPerCarton * blistersPerPack * tabletsPerBlister || 1;
+    case "pack":
+      return blistersPerPack * tabletsPerBlister || 1;
+    case "blister":
+      return tabletsPerBlister || 1;
+    default:
+      return 1;
+  }
+}
+
+function computeBaseQuantity(unit, qty, config) {
+  const multiplier = getUnitMultiplier(unit, config);
+  const quantity = Number(qty) || 0;
+  return quantity * multiplier;
+}
+
+function unitLabel(unit) {
+  switch (normalizeUnit(unit)) {
+    case "carton":
+      return "كرتون";
+    case "pack":
+      return "باكت";
+    case "blister":
+      return "شريط";
+    case "tablet":
+    default:
+      return "حبة";
+  }
+}
+
 function ensurePharmacy(req, res) {
   const pharmacyId = req.user?.pharmacy_id || null;
   if (!pharmacyId) {
@@ -24,11 +69,15 @@ function normalizeLine(item) {
   const qty = Number(item.qty || item.quantity || 0);
   const unitPrice = Number(item.unit_price ?? item.price ?? item.unitPrice ?? 0);
   const lineTotal = Number(item.line_total ?? item.lineTotal ?? qty * unitPrice);
+  const unitType = normalizeUnit(item.unit_type ?? item.unitType ?? item.unit ?? "pack");
+  const label = unitLabel(unitType);
   return {
     medicine_id: item.medicine_id ?? item.id ?? null,
     qty,
     unit_price: unitPrice,
     line_total: lineTotal,
+    unit_type: unitType,
+    unit_label: label,
   };
 }
 
@@ -270,54 +319,76 @@ async function createSaleInternal(req, res, status = "posted") {
     // تحديث المخزون وإضافة حركات المخزون للمبيعات المؤكدة
     if (status === "posted") {
       for (const item of normalizedItems) {
-        // تحديث كمية المخزون
-        await connection.query(
-          `UPDATE medicines
-           SET stock_qty = GREATEST(stock_qty - ?, 0)
-           WHERE id = ? AND pharmacy_id = ?`,
-          [item.qty, item.medicine_id, pharmacyId]
+        const [[medicineRow]] = await connection.query(
+          `SELECT id, stock_qty, stock_base_qty, packs_per_carton, blisters_per_pack, tablets_per_blister
+             FROM medicines
+            WHERE id = ? AND pharmacy_id = ?
+            LIMIT 1`,
+          [item.medicine_id, pharmacyId]
         );
 
-        // إضافة حركة مخزون للبيع
+        if (!medicineRow) {
+          throw new Error(`Medicine ${item.medicine_id} not found or not accessible`);
+        }
+
+        const baseQtyChange = computeBaseQuantity(item.unit_type, item.qty, medicineRow);
+        const currentBase = Number(medicineRow.stock_base_qty ?? medicineRow.stock_qty ?? 0);
+        if (baseQtyChange > currentBase) {
+          throw new Error(`Insufficient stock for medicine ${item.medicine_id}`);
+        }
+        const nextBase = currentBase - baseQtyChange;
+        item.base_qty = baseQtyChange;
+
+        await connection.query(
+          `UPDATE medicines
+             SET stock_qty = ?,
+                 stock_base_qty = ?,
+                 updated_at = NOW()
+           WHERE id = ? AND pharmacy_id = ?`,
+          [
+            nextBase,
+            nextBase,
+            item.medicine_id,
+            pharmacyId
+          ]
+        );
+
         await connection.query(
           `INSERT INTO inventory_movements (
-             medicine_id, branch_id, sale_id, qty_change, reason, ref_type, ref_id, pharmacy_id
-           ) VALUES (?, ?, ?, ?, 'sale', 'SO', ?, ?)`,
+             medicine_id,
+             branch_id,
+             sale_id,
+             qty_change,
+             reason,
+             ref_type,
+             ref_id,
+             pharmacy_id,
+             unit_type,
+             unit_label,
+             unit_qty,
+             base_qty_change,
+             balance_after_base,
+             ref_number,
+             notes
+           ) VALUES (?, ?, ?, ?, 'sale', 'SO', ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
           [
             item.medicine_id,
             branch_id ?? null,
             saleId,
-            -item.qty, // كمية سالبة للبيع
+            -baseQtyChange,
             saleId,
-            pharmacyId
+            pharmacyId,
+            item.unit_type,
+            item.unit_label || null,
+            item.qty,
+            -baseQtyChange,
+            nextBase,
+            `SO-${saleId}`,
+            null
           ]
         );
       }
     }
-
-    for (const item of normalizedItems) {
-      await connection.query(
-        `INSERT INTO sale_items (
-           sale_id,
-           medicine_id,
-           qty,
-           unit_price,
-           line_total,
-           pharmacy_id,
-           branch_id
-         ) VALUES (?, ?, ?, ?, ?, ?, ?)`,
-        [
-          saleId,
-          item.medicine_id,
-          item.qty,
-          item.unit_price,
-          item.line_total,
-          pharmacyId,
-          branch_id ?? null,
-        ]
-      );
-    }
-
     await connection.commit();
 
     const invoice = {

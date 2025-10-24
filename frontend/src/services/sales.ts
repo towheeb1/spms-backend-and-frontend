@@ -1,4 +1,5 @@
 // frontend/src/services/sales.ts
+import { POSInvoice } from "../components/pharmacist/pos/types";
 import { api } from "./api";
 
 export interface SalesReport {
@@ -77,13 +78,13 @@ export interface AddPaymentPayload {
 
 // إنشاء مبيعة جديدة
 export const createSale = async (payload: CreateSalePayload) => {
-  const { data } = await api.post("/sales", payload);
+  const { data } = await api.post("/pos/sales", payload);
   return data;
 };
 
 // إنشاء مسودة مبيعة
 export const createDraftSale = async (payload: CreateDraftPayload) => {
-  const { data } = await api.post("/sales/drafts", payload);
+  const { data } = await api.post("/pos/sales/drafts", payload);
   return data;
 };
 

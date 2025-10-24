@@ -94,6 +94,53 @@
   width: 100px;
 }
 
+.medicine-actions-group {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  background-color: rgba(15, 23, 42, 0.35);
+  padding: 0.35rem 0.5rem;
+  border-radius: 9999px;
+  border: 1px solid rgba(148, 163, 184, 0.15);
+}
+
+.medicine-actions-group:hover {
+  border-color: rgba(59, 130, 246, 0.45);
+}
+
+.unit-select-wrapper {
+  min-width: 110px;
+}
+
+.unit-select-wrapper button {
+  border-radius: 9999px;
+  background: rgba(30, 41, 59, 0.9);
+  border: 1px solid rgba(59, 130, 246, 0.35);
+  color: #e2e8f0;
+  font-size: 0.75rem;
+  padding: 0.35rem 1.25rem 0.35rem 0.75rem;
+  min-height: 32px;
+}
+
+.unit-select-wrapper button:hover:not(:disabled) {
+  background: rgba(51, 65, 85, 0.9);
+}
+
+.unit-select-wrapper button:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.unit-select-menu {
+  border-radius: 0.75rem;
+  border-color: rgba(59, 130, 246, 0.25);
+  background: rgba(15, 23, 42, 0.95);
+}
+
+.unit-select-option {
+  font-size: 0.8rem;
+}
+
 .details-toggle-button,
 .add-to-cart-button {
   background: none;

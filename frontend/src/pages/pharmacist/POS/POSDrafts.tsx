@@ -65,7 +65,6 @@ export default function POSDrafts({ invoices, onViewReceipt }: Props) {
         </div>
 
         {/* لوحة التحكم والإحصائيات */}
-        <POSDashboard />
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           <InventoryManager
@@ -75,11 +74,7 @@ export default function POSDrafts({ invoices, onViewReceipt }: Props) {
             }}
           />
 
-          <AccountingManager
-            onDateRangeChange={(start, end) => {
-              console.log('Date range changed:', start, end);
-            }}
-          />
+          
         </div>
       </div>
     </div>

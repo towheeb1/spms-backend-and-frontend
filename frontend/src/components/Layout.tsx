@@ -8,7 +8,19 @@ import { useToast } from "./ui/Toast";
 import { ThemeToggle } from "./ui/ThemeToggle";
 import { Card } from "./ui/Card";
 import { Button } from "./ui/Button";
-import { FiHome, FiUser, FiBox, FiBarChart2, FiSettings, FiLogOut, FiChevronDown, FiChevronUp, FiZap, FiSearch, FiPlus } from "react-icons/fi";
+import {
+  FiHome,
+  FiUser,
+  FiBox,
+  FiBarChart2,
+  FiSettings,
+  FiLogOut,
+  FiChevronDown,
+  FiChevronUp,
+  FiZap,
+  FiSearch,
+  FiPlus,
+} from "react-icons/fi";
 
 type NavDetail = {
   label: string;
@@ -19,7 +31,7 @@ type NavEntry = {
   to: string;
   label: string;
   description?: string;
-  icon?: string; // مثلاً: "home", "user", "box", إلخ
+  icon?: string;
   details?: NavDetail[];
 };
 
@@ -29,7 +41,7 @@ type RoleConfig = {
     subtitle?: string;
   };
   primary: NavEntry[];
-  quickAccess?: NavEntry[]; // إضافة قسم للوصول السريع
+  quickAccess?: NavEntry[];
 };
 
 const NAV_PER_ROLE: Record<string, RoleConfig> = navConfig as Record<string, RoleConfig>;
@@ -43,7 +55,7 @@ const getIcon = (iconName?: string) => {
     chart: <FiBarChart2 className="w-5 h-5" />,
     settings: <FiSettings className="w-5 h-5" />,
     logout: <FiLogOut className="w-5 h-5" />,
-    zap: <FiZap className="w-5 h-5" />, // أيقونة للوصول السريع
+    zap: <FiZap className="w-5 h-5" />,
     search: <FiSearch className="w-5 h-5" />,
     plus: <FiPlus className="w-5 h-5" />,
   };
@@ -78,7 +90,7 @@ export function Layout() {
   }, [role]);
 
   const navItems = roleConfig.primary;
-  const quickAccessItems = roleConfig.quickAccess || []; // افتراضياً فارغ إذا لم يكن موجوداً
+  const quickAccessItems = roleConfig.quickAccess || [];
 
   const [expandedNavItems, setExpandedNavItems] = useState<Record<string, boolean>>({});
 
@@ -100,158 +112,186 @@ export function Layout() {
     setExpandedNavItems((prev) => ({ ...prev, [key]: !prev[key] }));
   };
 
-  return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 text-white font-sans">
-      {(isPatientRoute || isDoctorRoute) ? (
+  // إذا كانت الصفحة لـ مريض أو دكتور، نعرض بدون sidebar
+  if (isPatientRoute || isDoctorRoute) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 text-white font-sans">
         <main className="container mx-auto px-4 py-6 min-w-0">
           <Outlet />
         </main>
-      ) : (
-        <div className="grid min-h-screen grid-cols-1 md:grid-cols-[280px_1fr] lg:grid-cols-[320px_1fr]">
-          {/* Sidebar */}
-          <aside className="hidden md:flex flex-col border-r border-white/10 bg-black/30 backdrop-blur-2xl bg-gradient-to-b from-slate-900/60 to-slate-800/60 shadow-2xl">
-            {/* Brand Header */}
-            <div className="px-5 py-6 border-b border-white/10">
-              <Link to="/dashboard" className="flex flex-col gap-1 group">
-                <span className="text-xl font-bold tracking-wide bg-clip-text text-transparent bg-gradient-to-r from-blue-400 to-cyan-400 group-hover:from-blue-300 group-hover:to-cyan-300 transition-all">
-                  {roleConfig.brand.title}
-                </span>
-                {roleConfig.brand.subtitle && (
-                  <span className="text-xs text-white/50 font-light">{roleConfig.brand.subtitle}</span>
-                )}
-              </Link>
-            </div>
 
-            {/* Quick Access Panel */}
-            {quickAccessItems.length > 0 && (
-              <div className="px-4 py-4 border-b border-white/10">
-                <h3 className="text-sm font-semibold text-white/70 mb-3 flex items-center gap-2">
-                  <FiZap className="w-4 h-4" />
-                  الوصول السريع
-                </h3>
-                <div className="space-y-1">
-                  {quickAccessItems.map((item) => (
-                    <NavLink key={item.to} to={item.to} className={quickAccessClass}>
-                      <div className="text-green-400">
-                        {getIcon(item.icon) || <FiZap className="w-4 h-4" />}
-                      </div>
-                      <span className="text-sm">{item.label}</span>
-                    </NavLink>
-                  ))}
-                </div>
-              </div>
-            )}
+        <ConfirmDialog
+          open={showLogoutDialog}
+          title="تسجيل الخروج"
+          message="هل أنت متأكد من رغبتك في تسجيل الخروج؟"
+          confirmText="تسجيل الخروج"
+          cancelText="إلغاء"
+          onConfirm={handleLogout}
+          onCancel={() => setShowLogoutDialog(false)}
+        />
+      </div>
+    );
+  }
 
-            {/* Navigation */}
-            <nav className="flex-1 overflow-y-auto px-4 py-5 space-y-2">
-              {navItems.map((item) => {
-                const details = item.details || [];
-                const hasDetails = details.length > 0;
-                const isExpanded = expandedNavItems[item.to];
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 text-white font-sans">
+      <div className="grid min-h-screen grid-cols-1 md:grid-cols-[280px_1fr] lg:grid-cols-[320px_1fr]">
+        {/* Sidebar */}
+        <aside className="hidden md:flex flex-col border-r border-white/10 bg-black/30 backdrop-blur-2xl bg-gradient-to-b from-slate-900/60 to-slate-800/60 shadow-2xl">
+          {/* Brand Header */}
+          <div className="px-5 py-6 border-b border-white/10">
+            <Link to="/dashboard" className="flex flex-col gap-1 group">
+              <span className="text-xl font-bold tracking-wide bg-clip-text text-transparent bg-gradient-to-r from-blue-400 to-cyan-400 group-hover:from-blue-300 group-hover:to-cyan-300 transition-all">
+                {roleConfig.brand.title}
+              </span>
+              {roleConfig.brand.subtitle && (
+                <span className="text-xs text-white/50 font-light">{roleConfig.brand.subtitle}</span>
+              )}
+            </Link>
+          </div>
 
-                return (
-                  <div key={item.to} className="space-y-1">
-                    <div className="flex items-center gap-2">
-                      <NavLink to={item.to} className={navClass}>
-                        <div className="flex items-center gap-3 flex-1">
-                          <div className="text-blue-400">
-                            {getIcon(item.icon) || <FiBox className="w-5 h-5" />}
-                          </div>
-                          <div className="flex-1">
-                            <div className="text-sm font-medium">{item.label}</div>
-                            {item.description && (
-                              <div className="text-[10px] text-white/50 truncate">{item.description}</div>
-                            )}
-                          </div>
-                        </div>
-                      </NavLink>
-                      {hasDetails && (
-                        <Button
-                          size="sm"
-                          variant="ghost"
-                          className={`shrink-0 w-8 h-8 flex items-center justify-center px-2 py-1 text-xs border border-white/10 hover:border-white/30 transition-all ${
-                            isExpanded ? "bg-white/10 shadow-md" : ""
-                          }`}
-                          onClick={() => handleToggleDetails(item.to)}
-                        >
-                          {isExpanded ? <FiChevronUp className="w-4 h-4" /> : <FiChevronDown className="w-4 h-4" />}
-                        </Button>
-                      )}
+          {/* Quick Access Panel */}
+          {quickAccessItems.length > 0 && (
+            <div className="px-4 py-4 border-b border-white/10">
+              <h3 className="text-sm font-semibold text-white/70 mb-3 flex items-center gap-2">
+                <FiZap className="w-4 h-4" />
+                الوصول السريع
+              </h3>
+              <div className="space-y-1">
+                {quickAccessItems.map((item) => (
+                  <NavLink key={item.to} to={item.to} className={quickAccessClass}>
+                    <div className="text-green-400">
+                      {getIcon(item.icon) || <FiZap className="w-4 h-4" />}
                     </div>
+                    <span className="text-sm">{item.label}</span>
+                  </NavLink>
+                ))}
+              </div>
+            </div>
+          )}
 
-                    {hasDetails && isExpanded && (
-                      <div className="ms-9 space-y-1 border-s border-white/10 ps-3 animate-fade-in">
-                        {details.map((detail) => (
-                          <NavLink
-                            key={detail.to}
-                            to={detail.to}
-                            className={({ isActive }) =>
-                              `block rounded-lg px-3 py-2 text-sm transition-all duration-200 ${
-                                isActive
-                                  ? "bg-gradient-to-r from-blue-600/20 to-indigo-600/20 text-white border border-white/10 shadow-sm"
-                                  : "text-white/60 hover:bg-white/5 hover:text-white hover:shadow-sm"
-                              }`
-                            }
-                          >
-                            {detail.label}
-                          </NavLink>
-                        ))}
+          {/* Navigation */}
+          <nav className="flex-1 overflow-y-auto px-4 py-5 space-y-2">
+            {navItems.map((item) => {
+              const details = item.details || [];
+              const hasDetails = details.length > 0;
+              const isExpanded = expandedNavItems[item.to];
+
+              return (
+                <div key={item.to} className="space-y-1">
+                  <div className="flex items-center gap-2">
+                    <NavLink to={item.to} className={navClass}>
+                      <div className="flex items-center gap-3 flex-1">
+                        <div className="text-blue-400">
+                          {getIcon(item.icon) || <FiBox className="w-5 h-5" />}
+                        </div>
+                        <div className="flex-1">
+                          <div className="text-sm font-medium">{item.label}</div>
+                          {item.description && (
+                            <div className="text-[10px] text-white/50 truncate">{item.description}</div>
+                          )}
+                        </div>
                       </div>
+                    </NavLink>
+                    {hasDetails && (
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        className={`shrink-0 w-8 h-8 flex items-center justify-center px-2 py-1 text-xs border border-white/10 hover:border-white/30 transition-all ${
+                          isExpanded ? "bg-white/10 shadow-md" : ""
+                        }`}
+                        onClick={() => handleToggleDetails(item.to)}
+                      >
+                        {isExpanded ? <FiChevronUp className="w-4 h-4" /> : <FiChevronDown className="w-4 h-4" />}
+                      </Button>
                     )}
                   </div>
-                );
-              })}
-            </nav>
 
-            {/* Actions */}
-            <div className="px-5 py-5 border-t border-white/10 space-y-4">
-              <div className="pt-2 flex items-center justify-between gap-2">
+                  {hasDetails && isExpanded && (
+                    <div className="ms-9 space-y-1 border-s border-white/10 ps-3 animate-fade-in">
+                      {details.map((detail) => (
+                        <NavLink
+                          key={detail.to}
+                          to={detail.to}
+                          className={({ isActive }) =>
+                            `block rounded-lg px-3 py-2 text-sm transition-all duration-200 ${
+                              isActive
+                                ? "bg-gradient-to-r from-blue-600/20 to-indigo-600/20 text-white border border-white/10 shadow-sm"
+                                : "text-white/60 hover:bg-white/5 hover:text-white hover:shadow-sm"
+                            }`
+                          }
+                        >
+                          {detail.label}
+                        </NavLink>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+          </nav>
+
+          {/* Actions */}
+          <div className="px-5 py-5 border-t border-white/10 space-y-4">
+            <div className="pt-2 flex items-center justify-between gap-2">
+              <ThemeToggle variant="icon" />
+              <Button
+                variant="ghost"
+                className="text-sm flex items-center gap-2 hover:bg-red-500/20 hover:text-red-300 transition-all"
+                onClick={() => setShowLogoutDialog(true)}
+                disabled={!isAuthed}
+              >
+                <FiLogOut />
+                <span>تسجيل الخروج</span>
+              </Button>
+            </div>
+          </div>
+        </aside>
+
+        {/* Main Content Area — FIXED SIZE */}
+        <div className="flex flex-col min-h-screen md:min-h-0">
+          {/* Mobile Header */}
+          <header className="md:hidden px-4 py-3 border-b border-white/10 bg-black/30 backdrop-blur-xl bg-gradient-to-r from-slate-900/60 to-slate-800/60 shadow-lg">
+            <div className="flex items-center justify-between gap-2">
+              <Link to="/dashboard" className="font-bold bg-clip-text text-transparent bg-gradient-to-r from-blue-400 to-cyan-400 hover:from-blue-300 hover:to-cyan-300 transition-all">
+                {roleConfig.brand.title}
+              </Link>
+              <div className="flex items-center gap-2">
                 <ThemeToggle variant="icon" />
                 <Button
-                  variant="ghost"
-                  className="text-sm flex items-center gap-2 hover:bg-red-500/20 hover:text-red-300 transition-all"
+                  size="sm"
+                  variant="outline"
+                  className="flex items-center gap-1 hover:bg-red-500/20 hover:border-red-300 transition-all"
                   onClick={() => setShowLogoutDialog(true)}
                   disabled={!isAuthed}
                 >
-                  <FiLogOut />
-                  <span>تسجيل الخروج</span>
+                  <FiLogOut size={16} />
                 </Button>
               </div>
             </div>
-          </aside>
+          </header>
 
-          {/* Main Content */}
-          <div className="flex flex-col min-h-screen">
-            {/* Mobile Header */}
-            <header className="md:hidden px-4 py-3 border-b border-white/10 bg-black/30 backdrop-blur-xl bg-gradient-to-r from-slate-900/60 to-slate-800/60 shadow-lg">
-              <div className="flex items-center justify-between gap-2">
-                <Link to="/dashboard" className="font-bold bg-clip-text text-transparent bg-gradient-to-r from-blue-400 to-cyan-400 hover:from-blue-300 hover:to-cyan-300 transition-all">
-                  {roleConfig.brand.title}
-                </Link>
-                <div className="flex items-center gap-2">
-                  <ThemeToggle variant="icon" />
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    className="flex items-center gap-1 hover:bg-red-500/20 hover:border-red-300 transition-all"
-                    onClick={() => setShowLogoutDialog(true)}
-                    disabled={!isAuthed}
-                  >
-                    <FiLogOut size={16} />
-                  </Button>
+          {/* Desktop Fixed Content */}
+          <div className="hidden md:block flex-1 relative">
+            <div className="absolute inset-0 px-4 py-6 md:px-6 md:py-8 overflow-hidden">
+              <Card className="shadow-2xl border-white/10 bg-gradient-to-br from-white/5 to-white/2 backdrop-blur-xl rounded-2xl h-full flex flex-col">
+                <div className="flex-1 overflow-y-auto p-6">
+                  <Outlet />
                 </div>
-              </div>
-            </header>
-
-            {/* Page Content */}
-            <main className="flex-1 min-w-0 px-4 py-6 md:px-6 md:py-8 space-y-6 overflow-x-hidden">
-              <Card className="shadow-2xl border-white/10 bg-gradient-to-br from-white/5 to-white/2 backdrop-blur-xl rounded-2xl p-6">
-                <Outlet />
               </Card>
-            </main>
+            </div>
+          </div>
+
+          {/* Mobile Scrollable Content (no fixed height needed) */}
+          <div className="md:hidden flex-1 px-4 py-6">
+            <Card className="shadow-2xl border-white/10 bg-gradient-to-br from-white/5 to-white/2 backdrop-blur-xl rounded-2xl">
+              <div className="p-6">
+                <Outlet />
+              </div>
+            </Card>
           </div>
         </div>
-      )}
+      </div>
 
       <ConfirmDialog
         open={showLogoutDialog}

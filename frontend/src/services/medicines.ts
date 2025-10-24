@@ -9,6 +9,7 @@ export type Medicine = {
   barcode?: string | null;
   price?: number;
   stock?: number;
+  stock_base_qty?: number;
   category?: string | null;
   manufacturer?: string | null;
   batch_no?: string | null;

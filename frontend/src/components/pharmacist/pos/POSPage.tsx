@@ -6,11 +6,14 @@ import POSActions from "./POSActions";
 import POSPaymentModal from "./POSPaymentModal";
 import POSReceiptModal from "./POSReceiptModal";
 import MedicineCard from "./MedicineCard";
-import { postSale } from '../../../services/sales';
+import { createSale } from '../../../services/sales';
 import { listMedicines } from "../../../services/medicines";
 import { useToast } from "../../ui/Toast";
-import type { Medicine, CartItem, PaymentMethod, Customer, POSInvoice, POSPayment, POSReceipt, POSReceiptItem } from "./types";
+import type { Medicine, CartItem, PaymentMethod, Customer, POSInvoice, POSPayment, POSReceipt, POSReceiptItem, SaleUnitType } from "./types";
 import "./style/POSPage.css";
+
+const INITIAL_PAGE_SIZE = 6;
+const PAGE_INCREMENT = 6;
 
 interface Props {
   customers?: Customer[];
@@ -39,6 +42,7 @@ export default function POSPage({
   const [categoryFilter, setCategoryFilter] = useState<string>('all');
   const [loading, setLoading] = useState(true);
   const [expandedMedicines, setExpandedMedicines] = useState<Set<number>>(new Set());
+  const [visibleCount, setVisibleCount] = useState<number>(INITIAL_PAGE_SIZE);
 
   // جلب الأدوية عند تحميل الصفحة
   useEffect(() => {
@@ -75,6 +79,8 @@ export default function POSPage({
     }
 
     setFilteredMedicines(filtered);
+    setVisibleCount(INITIAL_PAGE_SIZE);
+    setExpandedMedicines(new Set());
   }, [medicines, categoryFilter, searchTerm]);
 
   // الحصول على الفئات المتاحة
@@ -94,16 +100,50 @@ export default function POSPage({
     });
   };
 
-  const addToCart = (medicine: Medicine) => {
-    const basePrice = Number(medicine.retail_price ?? medicine.price ?? 0);
+  const determineUnitInfo = (medicine: Medicine, unit: SaleUnitType) => {
+    const packsPerCarton = Number(medicine.packs_per_carton || 0) || 1;
+    const blistersPerPack = Number(medicine.blisters_per_pack || 0) || 1;
+    const tabletsPerBlister = Number(medicine.tablets_per_blister || 0) || 1;
+
+    switch (unit) {
+      case "carton":
+        return {
+          unit_price: Number(medicine.carton_price ?? medicine.wholesale_price ?? medicine.retail_price ?? medicine.price ?? 0),
+          unit_label: "كرتون",
+          base_quantity: packsPerCarton * blistersPerPack * tabletsPerBlister,
+        };
+      case "pack":
+        return {
+          unit_price: Number(medicine.retail_price ?? medicine.price ?? 0),
+          unit_label: "باكت",
+          base_quantity: blistersPerPack * tabletsPerBlister,
+        };
+      case "blister":
+        return {
+          unit_price: Number(medicine.blister_price ?? 0),
+          unit_label: "شريط",
+          base_quantity: tabletsPerBlister,
+        };
+      case "tablet":
+      default:
+        return {
+          unit_price: Number(medicine.tablet_price ?? 0),
+          unit_label: "حبة",
+          base_quantity: 1,
+        };
+    }
+  };
+
+  const addToCart = (medicine: Medicine, unit: SaleUnitType = "pack") => {
+    const { unit_price, unit_label, base_quantity } = determineUnitInfo(medicine, unit);
 
     setCart(prev => {
-      const existing = prev.find(item => item.medicine_id === medicine.id);
+      const existing = prev.find(item => item.medicine_id === medicine.id && item.unit_type === unit);
       if (existing) {
         const newQty = existing.qty + 1;
         return prev.map(item =>
-          item.medicine_id === medicine.id
-            ? { ...item, qty: newQty, total: newQty * item.unit_price }
+          item.medicine_id === medicine.id && item.unit_type === unit
+            ? { ...item, qty: newQty, total: newQty * item.unit_price, unit_label, base_quantity }
             : item
         );
       } else {
@@ -111,30 +151,51 @@ export default function POSPage({
           medicine_id: medicine.id || 0,
           name: medicine.name,
           qty: 1,
-          unit_price: basePrice,
-          total: basePrice,
-          unit_label: "سعر التجزئة",
+          unit_price,
+          total: unit_price,
+          unit_type: unit,
+          unit_label,
+          base_quantity,
         }];
       }
     });
 
-    toast.success(`تمت إضافة ${medicine.name} بسعر التجزئة`);
+    toast.success(`تمت إضافة ${medicine.name} (${unit_label})`);
   };
 
-  const updateCartQty = (medicineId: number, qty: number) => {
+  const updateCartQty = (medicineId: number, unit: SaleUnitType, qty: number) => {
     if (qty <= 0) {
-      setCart(prev => prev.filter(item => item.medicine_id !== medicineId));
+      setCart(prev => prev.filter(item => !(item.medicine_id === medicineId && item.unit_type === unit)));
     } else {
       setCart(prev => prev.map(item =>
-        item.medicine_id === medicineId
+        item.medicine_id === medicineId && item.unit_type === unit
           ? { ...item, qty, total: qty * item.unit_price }
           : item
       ));
     }
   };
 
-  const removeFromCart = (medicineId: number) => {
-    setCart(prev => prev.filter(item => item.medicine_id !== medicineId));
+  const removeFromCart = (medicineId: number, unit: SaleUnitType) => {
+    setCart(prev => prev.filter(item => !(item.medicine_id === medicineId && item.unit_type === unit)));
+  };
+
+  const visibleMedicines = filteredMedicines.slice(0, visibleCount);
+  const canLoadMore = visibleCount < filteredMedicines.length;
+  const canShowLess = visibleCount > INITIAL_PAGE_SIZE;
+
+  const handleLoadMore = () => {
+    setVisibleCount(prev => Math.min(prev + PAGE_INCREMENT, filteredMedicines.length));
+  };
+
+  const handleShowLess = () => {
+    setVisibleCount(prev => Math.max(INITIAL_PAGE_SIZE, prev - PAGE_INCREMENT));
+    setExpandedMedicines(prev => {
+      const next = new Set(prev);
+      filteredMedicines.slice(Math.max(INITIAL_PAGE_SIZE, visibleCount - PAGE_INCREMENT)).forEach((med) => {
+        if (med?.id != null) next.delete(med.id);
+      });
+      return next;
+    });
   };
 
   const handleSaveDraft = () => {
@@ -145,22 +206,39 @@ export default function POSPage({
     if (cart.length === 0) return;
 
     try {
-      const result = await postSale(cart, selectedCustomerId, 1, 1, 1);
+      const saleItems = cart.map(item => ({
+        medicine_id: item.medicine_id,
+        qty: item.qty,
+        unit_price: item.unit_price,
+        line_total: item.total,
+        unit_type: item.unit_type,
+      }));
+
+      const result = await createSale({
+        customer_id: selectedCustomerId ?? undefined,
+        branch_id: null,
+        register_id: null,
+        shift_id: null,
+        items: saleItems,
+      });
 
       const receipt: POSReceipt = {
-        id: result.id,
-        invoice: result,
+        id: result.invoice.id,
+        invoice: result.invoice,
         items: cart.map(item => ({
           id: Math.floor(Math.random() * 1000000),
-          sale_id: result.id,
+          sale_id: result.invoice.id,
           medicine_id: item.medicine_id,
           qty: item.qty,
           unit_price: item.unit_price,
           line_total: item.total,
           medicine_name: item.name,
           name: item.name,
+          unit_type: item.unit_type,
+          unit_label: item.unit_label,
+          base_quantity: item.base_quantity,
         })),
-        payments: []
+        payments: result.payments ?? [],
       };
 
       setCurrentReceipt(receipt);
@@ -169,7 +247,16 @@ export default function POSPage({
       setCart([]);
       setSelectedCustomerId(null);
 
-      toast.success(`تم إتمام البيع بنجاح! رقم الفاتورة: #${result.id}`);
+      toast.success(`تم إتمام البيع بنجاح! رقم الفاتورة: #${result.invoice.id}`);
+
+      // Refresh inventory data and broadcast movement update
+      localStorage.setItem('inventory_operation_completed', Date.now().toString());
+      if ((window as any).refreshInventoryMovements) {
+        (window as any).refreshInventoryMovements();
+      }
+
+      const medicinesData = await listMedicines();
+      setMedicines(medicinesData || []);
     } catch (error) {
       console.error('فشل في إتمام البيع:', error);
       toast.error('فشل في إتمام البيع. يرجى المحاولة مرة أخرى.');
@@ -281,7 +368,7 @@ export default function POSPage({
                   </tr>
                 </thead>
                 <tbody>
-                  {filteredMedicines.map((medicine) => {
+                  {visibleMedicines.map((medicine) => {
                     const isExpanded = expandedMedicines.has(medicine.id || 0);
 
                     return (
@@ -296,6 +383,35 @@ export default function POSPage({
                   })}
                 </tbody>
               </table>
+
+              {(canLoadMore || canShowLess) && (
+                <div className="pos-load-more-container">
+                  {canShowLess && (
+                    <button
+                      type="button"
+                      className="pos-load-more-button pos-load-more-button--secondary"
+                      onClick={handleShowLess}
+                    >
+                      عرض عناصر أقل
+                      <span className="pos-load-more-hint">
+                        سيتم إخفاء {Math.min(PAGE_INCREMENT, visibleCount - INITIAL_PAGE_SIZE)} عناصر
+                      </span>
+                    </button>
+                  )}
+                  {canLoadMore && (
+                    <button
+                      type="button"
+                      className="pos-load-more-button"
+                      onClick={handleLoadMore}
+                    >
+                      عرض المزيد من الأدوية
+                      <span className="pos-load-more-hint">
+                        سيتم تحميل {Math.min(PAGE_INCREMENT, filteredMedicines.length - visibleCount)} عناصر إضافية
+                      </span>
+                    </button>
+                  )}
+                </div>
+              )}
             </div>
           )}
 

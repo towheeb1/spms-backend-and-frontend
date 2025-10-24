@@ -16,6 +16,8 @@ import POSPostedPage from "./pages/pharmacist/POS/POSPosted";
 import POSReceiptsPage from "./pages/pharmacist/POS/POSReceipts";
 import POSReportsPage from "./pages/pharmacist/POS/POSReports";
 import POSShiftsPage from "./pages/pharmacist/POS/POSShifts";
+import AccountingDepartment from "./pages/pharmacist/POS/AccountingDepartment";
+import { DashboardSel } from "./pages/pharmacist/dashboard/DashboardSel";
 import InventoryStock from "./pages/pharmacist/Inventory/InventoryStock";
 import InventoryAdjustments from "./pages/pharmacist/Inventory/InventoryAdjustments";
 import InventoryMovements from "./pages/pharmacist/Inventory/InventoryMovements";
@@ -83,6 +85,8 @@ export default function AppRoutes() {
         <Route path="/dashboard/branches" element={<DashboardBranches />} />
         <Route path="/dashboard/analytics" element={<DashboardAnalytics />} />
         <Route path="/pos" element={<POSPage />} />
+        <Route path="/pos/dashboard/dashboardsel" element={<DashboardSel />} />
+        <Route path="/pos/AccountingDepartment" element={<AccountingDepartment />} />
         <Route path="/pos/invoices" element={<POSInvoicesPage />} />
         <Route path="/pos/drafts" element={<POSDraftsPage invoices={[]} onViewReceipt={() => {}} />} />
         <Route path="/pos/posted" element={<POSPostedPage invoices={[]} onViewReceipt={() => {}} />} />

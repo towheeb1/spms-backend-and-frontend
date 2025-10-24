@@ -1,8 +1,9 @@
 // src/components/pharmacist/pos/MedicineCard.tsx
-import React from "react";
-import type { Medicine } from "./types";
+import React, { useMemo, useState } from "react";
+import type { Medicine, SaleUnitType } from "./types";
 import { FiChevronDown, FiChevronUp, FiPlus } from "react-icons/fi";
 import "./style/MedicineCard.css";
+import { Select } from "../../ui/Select";
 
 function formatCurrency(amount: number, currency?: string | null): string {
   const fallbackSymbol = currency === "USD" ? "$" : currency === "EUR" ? "€" : currency === "SAR" ? "﷼" : "ر.ي";
@@ -17,7 +18,7 @@ interface MedicineCardProps {
   medicine: Medicine;
   isExpanded: boolean;
   onToggleDetails: (medicineId: number) => void;
-  onAddToCart: (medicine: Medicine) => void;
+  onAddToCart: (medicine: Medicine, unit: SaleUnitType) => void;
 }
 
 export default function MedicineCard({
@@ -26,6 +27,23 @@ export default function MedicineCard({
   onToggleDetails,
   onAddToCart,
 }: MedicineCardProps) {
+  const unitOptions = useMemo(
+    () => [
+      { value: "carton", label: "كرتون", disabled: Number(medicine.carton_price ?? 0) <= 0 },
+      { value: "pack", label: "باكت", disabled: Number(medicine.retail_price ?? medicine.price ?? 0) <= 0 },
+      { value: "blister", label: "شريط", disabled: Number(medicine.blister_price ?? 0) <= 0 },
+      { value: "tablet", label: "حبة", disabled: Number(medicine.tablet_price ?? 0) <= 0 },
+    ],
+    [medicine.blister_price, medicine.carton_price, medicine.price, medicine.retail_price, medicine.tablet_price]
+  );
+
+  const [selectedUnit, setSelectedUnit] = useState<SaleUnitType>(() => {
+    if (!unitOptions.find((opt) => opt.value === "pack" && !opt.disabled)) {
+      const firstAvailable = unitOptions.find((opt) => !opt.disabled);
+      return (firstAvailable?.value as SaleUnitType | undefined) ?? "pack";
+    }
+    return "pack";
+  });
   const basePrice = Number(medicine.retail_price ?? medicine.price ?? 0);
   const stockStatus = medicine.stock !== undefined
     ? medicine.stock > 0 ? 'متوفر' : 'منتهي'
@@ -71,13 +89,24 @@ export default function MedicineCard({
           >
             {isExpanded ? <FiChevronUp size={16} /> : <FiChevronDown size={16} />}
           </button>
-          <button
-            onClick={() => onAddToCart(medicine)}
-            className="add-to-cart-button"
-            aria-label="إضافة إلى السلة"
-          >
-            <FiPlus size={16} />
-          </button>
+          <div className="medicine-actions-group">
+            <Select
+              value={selectedUnit}
+              options={unitOptions}
+              onChange={(value) => setSelectedUnit(value as SaleUnitType)}
+              className="unit-select-wrapper"
+              menuClassName="unit-select-menu"
+              optionClassName="unit-select-option"
+              placeholder="اختر الوحدة"
+            />
+            <button
+              onClick={() => onAddToCart(medicine, selectedUnit)}
+              className="add-to-cart-button"
+              aria-label="إضافة إلى السلة"
+            >
+              <FiPlus size={16} />
+            </button>
+          </div>
         </td>
       </tr>
 

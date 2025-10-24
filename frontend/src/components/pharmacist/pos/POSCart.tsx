@@ -3,13 +3,13 @@
 import React from "react";
 import { FaTrashAlt } from "react-icons/fa"; // أيقونة الحذف
 import { FiPlus, FiMinus } from "react-icons/fi"; // أيقونات زيادة/نقصان الكمية
-import type { CartItem } from "./types"; // ✅ تم التعديل
+import type { CartItem, SaleUnitType } from "./types"; // ✅ تم التعديل
 import "./style/POSCart.css";
 
 interface Props {
   cart: CartItem[];
-  onQtyChange: (medicineId: number, qty: number) => void;
-  onDelete: (medicineId: number) => void;
+  onQtyChange: (medicineId: number, unit: SaleUnitType, qty: number) => void;
+  onDelete: (medicineId: number, unit: SaleUnitType) => void;
   total: number;
   formatPrice?: (value: number) => string;
 }
@@ -37,7 +37,7 @@ export default function POSCart({ cart, onQtyChange, onDelete, total, formatPric
           <div className="pos-cart-items">
             {cart.map((item) => (
               <div
-                key={item.medicine_id}
+                key={`${item.medicine_id}-${item.unit_type}`}
                 className="pos-cart-item"
               >
                 {/* اسم الدواء */}
@@ -48,13 +48,14 @@ export default function POSCart({ cart, onQtyChange, onDelete, total, formatPric
                     {item.unit_label ? ` (${item.unit_label})` : ''}
                     {' | '}
                     الإجمالي: {format(item.total)}
+                    {' | '}الوحدة الأساسية: {item.base_quantity}
                   </div>
                 </div>
 
                 {/* تحكم في الكمية */}
                 <div className="pos-cart-quantity-section">
                   <button
-                    onClick={() => onQtyChange(item.medicine_id, item.qty - 1)}
+                    onClick={() => onQtyChange(item.medicine_id, item.unit_type, item.qty - 1)}
                     disabled={item.qty <= 1}
                     className={`pos-quantity-button ${item.qty <= 1 ? 'disabled' : ''}`}
                   >
@@ -65,14 +66,14 @@ export default function POSCart({ cart, onQtyChange, onDelete, total, formatPric
                     type="number"
                     value={item.qty}
                     onChange={(e) =>
-                      onQtyChange(item.medicine_id, Math.max(1, Number(e.target.value)))
+                      onQtyChange(item.medicine_id, item.unit_type, Math.max(1, Number(e.target.value)))
                     }
                     className="pos-quantity-input"
                     min={1}
                   />
 
                   <button
-                    onClick={() => onQtyChange(item.medicine_id, item.qty + 1)}
+                    onClick={() => onQtyChange(item.medicine_id, item.unit_type, item.qty + 1)}
                     className="pos-quantity-button"
                   >
                     <FiPlus size={16} />
@@ -81,7 +82,7 @@ export default function POSCart({ cart, onQtyChange, onDelete, total, formatPric
 
                 {/* زر الحذف */}
                 <button
-                  onClick={() => onDelete(item.medicine_id)}
+                  onClick={() => onDelete(item.medicine_id, item.unit_type)}
                   className="pos-delete-button"
                 >
                   <FaTrashAlt size={16} />

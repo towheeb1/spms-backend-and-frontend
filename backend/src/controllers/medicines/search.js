@@ -47,6 +47,7 @@ export async function searchMedicines(req, res) {
       // Map DB columns to a stable, frontend-friendly API shape
       const price = r.price === null ? 0 : Number(r.price);
       const stock = r.stock_qty === null ? 0 : Number(r.stock_qty);
+      const stockBase = r.stock_base_qty === null ? stock : Number(r.stock_base_qty);
       const min_stock = r.min_stock ?? r.min_stock_qty ?? 0;
       return {
         id: r.id,
@@ -58,6 +59,7 @@ export async function searchMedicines(req, res) {
         barcode: r.barcode || null,
         price,
         stock,
+        stock_base_qty: stockBase,
         min_stock: Number(min_stock || 0),
         category: r.category || null,
         manufacturer: r.manufacturer || r.brand || null,
@@ -90,6 +92,7 @@ export async function listMedicines(req, res) {
   m.barcode,
   m.price,
   m.stock_qty,
+  m.stock_base_qty,
   m.category,
   m.manufacturer,
   m.batch_no,

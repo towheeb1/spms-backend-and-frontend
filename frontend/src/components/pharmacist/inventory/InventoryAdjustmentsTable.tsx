@@ -71,13 +71,24 @@ export function InventoryAdjustmentsTable({ adjustments, loading }: Props) {
   const columns = [
     { key: 'id', title: 'رقم التعديل' },
     { key: 'medicine_name', title: 'الدواء' },
-    { key: 'qty_change', title: 'التغيير في الكمية', render: (value: number) => (
-      <span className={value > 0 ? 'text-green-400' : 'text-red-400'}>
-        {value > 0 ? '+' : ''}{value}
-      </span>
-    )},
+    {
+      key: 'qty_change',
+      title: 'التغيير في الكمية',
+      render: (row: InventoryAdjustment) => {
+        const value = row.qty_change;
+        return (
+          <span className={value > 0 ? 'text-green-400' : 'text-red-400'}>
+            {value > 0 ? '+' : ''}{value}
+          </span>
+        );
+      }
+    },
     { key: 'reason', title: 'السبب' },
-    { key: 'created_at', title: 'التاريخ', render: (value: string) => new Date(value).toLocaleDateString('ar-SA') },
+    {
+      key: 'created_at',
+      title: 'التاريخ',
+      render: (row: InventoryAdjustment) => new Date(row.created_at).toLocaleDateString('ar-SA')
+    },
   ];
 
   return (

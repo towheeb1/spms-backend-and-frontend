@@ -1,6 +1,9 @@
 // src/types/pos.ts
 
+import { ReactNode } from "react";
+
 export interface Medicine {
+  [x: string]: ReactNode;
   id?: number;
   name: string;
   generic_name?: string | null;
@@ -33,13 +36,17 @@ export interface Medicine {
   tablets_per_blister?: number | null;
 }
 
+export type SaleUnitType = "carton" | "pack" | "blister" | "tablet";
+
 export interface CartItem {
   medicine_id: number;
   name: string;
   qty: number;
   unit_price: number;
   total: number;
-  unit_label?: string;
+  unit_type: SaleUnitType;
+  unit_label: string;
+  base_quantity: number; // عدد الحبات التي تمثلها الوحدة الواحدة
 }
 
 export interface Customer {
@@ -114,6 +121,9 @@ export interface POSReceiptItem {
   line_total: number;
   medicine_name: string; // مثلاً من جدول `medicines`
   name?: string; // إضافة خاصية name كبديل
+  unit_type?: SaleUnitType;
+  unit_label?: string;
+  base_quantity?: number;
 }
 
 export interface POSPayment {

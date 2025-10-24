@@ -9,11 +9,17 @@ interface InventoryMovement {
   reason: string;
   created_at: string;
   medicine_name?: string;
+  unit_type?: string;
+  unit_label?: string;
+  unit_qty?: number;
+  base_qty_change?: number;
+  balance_after_base?: number;
+  ref_number?: string;
 }
 
 interface Props {
   movements: InventoryMovement[];
-  loading: boolean;
+  loading: boolean; 
 }
 
 export function InventoryMovementsTable({ movements, loading }: Props) {
@@ -53,8 +59,10 @@ export function InventoryMovementsTable({ movements, loading }: Props) {
 
   const stats = useMemo(() => {
     const totalMovements = movements.length;
-    const totalIn = movements.filter(m => m.qty_change > 0).reduce((sum, m) => sum + m.qty_change, 0);
-    const totalOut = Math.abs(movements.filter(m => m.qty_change < 0).reduce((sum, m) => sum + m.qty_change, 0));
+    const totalIn = movements.filter(m => (m.base_qty_change ?? m.qty_change) > 0)
+      .reduce((sum, m) => sum + (m.base_qty_change ?? m.qty_change), 0);
+    const totalOut = Math.abs(movements.filter(m => (m.base_qty_change ?? m.qty_change) < 0)
+      .reduce((sum, m) => sum + (m.base_qty_change ?? m.qty_change), 0));
     return { totalMovements, totalIn, totalOut };
   }, [movements]);
 
@@ -80,12 +88,44 @@ export function InventoryMovementsTable({ movements, loading }: Props) {
       render: (row: InventoryMovement) => row.medicine_name || '—'
     },
     {
-      key: 'qty_change',
-      title: 'التغيير في الكمية',
+      key: 'unit',
+      title: 'الوحدة',
       render: (row: InventoryMovement) => (
-        <span className={row.qty_change > 0 ? 'text-green-400' : 'text-red-400'}>
-          {row.qty_change > 0 ? '+' : ''}{row.qty_change}
-        </span>
+        <div className="text-sm">
+          <div className="font-semibold">
+            {row.unit_label || row.unit_type || '—'}
+          </div>
+          {row.unit_qty !== undefined && (
+            <div className="text-xs text-white/60">كمية الوحدة: {row.unit_qty}</div>
+          )}
+        </div>
+      )
+    },
+    {
+      key: 'base_qty_change',
+      title: 'التغيير (أساسي)',
+      render: (row: InventoryMovement) => {
+        const value = row.base_qty_change ?? row.qty_change;
+        const isPositive = value >= 0;
+        return (
+          <div className="text-sm">
+            <span className={isPositive ? 'text-green-400' : 'text-red-400'}>
+              {isPositive ? '+' : ''}{value}
+            </span>
+            {row.qty_change !== undefined && row.qty_change !== value && (
+              <div className="text-xs text-white/60">سجل: {row.qty_change}</div>
+            )}
+          </div>
+        );
+      }
+    },
+    {
+      key: 'balance_after_base',
+      title: 'الرصيد بعد الحركة',
+      render: (row: InventoryMovement) => (
+        <div className="text-sm font-semibold text-white/80">
+          {row.balance_after_base !== undefined ? row.balance_after_base : '—'}
+        </div>
       )
     },
     {
@@ -97,6 +137,11 @@ export function InventoryMovementsTable({ movements, loading }: Props) {
       key: 'created_at',
       title: 'التاريخ',
       render: (row: InventoryMovement) => new Date(row.created_at).toLocaleDateString('ar-SA')
+    },
+    {
+      key: 'ref_number',
+      title: 'مرجع',
+      render: (row: InventoryMovement) => row.ref_number || '—'
     },
   ];
 

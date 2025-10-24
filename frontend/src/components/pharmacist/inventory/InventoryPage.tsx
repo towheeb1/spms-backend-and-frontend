@@ -87,6 +87,10 @@ export default function InventoryPage() {
         }
       }
       await loadData();
+      localStorage.setItem('inventory_operation_completed', Date.now().toString());
+      if ((window as any).refreshInventoryMovements) {
+        (window as any).refreshInventoryMovements();
+      }
     } catch (error) {
       console.error('Error updating item:', error);
     }
@@ -98,6 +102,10 @@ export default function InventoryPage() {
     try {
       await deleteMedicine(id);
       await loadData();
+      localStorage.setItem('inventory_operation_completed', Date.now().toString());
+      if ((window as any).refreshInventoryMovements) {
+        (window as any).refreshInventoryMovements();
+      }
     } catch (error) {
       console.error('Error deleting inventory item:', error);
       alert('فشل في حذف المنتج من المخزون');
@@ -190,6 +198,10 @@ export default function InventoryPage() {
     }
     setSelectedItems([]);
     setBulkAction('none');
+    localStorage.setItem('inventory_operation_completed', Date.now().toString());
+    if ((window as any).refreshInventoryMovements) {
+      (window as any).refreshInventoryMovements();
+    }
   };
 
   const handleBulkDelete = async () => {
@@ -198,6 +210,10 @@ export default function InventoryPage() {
     try {
       await deleteManyMedicines(selectedItems);
       await loadData();
+      localStorage.setItem('inventory_operation_completed', Date.now().toString());
+      if ((window as any).refreshInventoryMovements) {
+        (window as any).refreshInventoryMovements();
+      }
     } catch (error) {
       console.error('Bulk delete error:', error);
       alert('فشل حذف العناصر. تحقق من السجلات لمعرفة التفاصيل.');
