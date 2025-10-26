@@ -34,8 +34,7 @@ const DashboardAnalytics: React.FC = () => {
   return (
     <div className="p-6">
       <h1 className="text-2xl font-bold mb-4">تحليلات المبيعات</h1>
-      <p>هذه الصفحة تعرض تحليلات مفصلة للمبيعات والأداء.</p>
-      {data?.analytics && <DashboardCharts analytics={data.analytics} />}
+       {data?.analytics && <DashboardCharts analytics={data.analytics} />}
     </div>
   );
 };

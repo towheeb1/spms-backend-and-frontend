@@ -4,6 +4,13 @@
       "title": "SPMS",
       "subtitle": "منصة إدارة الصيدلية"
     },
+    "quickAccess": [
+      {
+        "to": "/notifications",
+        "label": "الإشعارات",
+        "icon": "zap"
+      }
+    ],
     "primary": [
       {
         "to": "/dashboard",

@@ -1,4 +1,4 @@
-import { Fragment, useState } from 'react';
+import { useState } from 'react';
 import { Med } from './types';
 import { LOW_STOCK_THRESHOLD, CRITICAL_STOCK_THRESHOLD } from './InventoryPage';
 import { Button } from '../../ui/Button';
@@ -13,6 +13,7 @@ interface Props {
   onSelectItem: (id: number, checked: boolean) => void;
   onSelectAll: (checked: boolean) => void;
   onDelete: (id: number | undefined) => void;
+  highlightId?: number | null;
 }
 
 export default function InventoryTable({
@@ -25,8 +26,8 @@ export default function InventoryTable({
   onSelectItem,
   onSelectAll,
   onDelete,
+  highlightId = null,
 }: Props) {
-  const [expandedId, setExpandedId] = useState<number | null>(null);
   const allSelected = items.length > 0 && selectedItems.length === items.length;
 
   const getStockStatus = (med: Med) => {
@@ -89,11 +90,15 @@ export default function InventoryTable({
               {items.map(med => {
                 const status = getStockStatus(med);
                 const isSelected = selectedItems.includes(med.id || 0);
-                const hasDetails = !!(med.items && med.items.length);
-                const isExpanded = expandedId === med.id;
+                const isHighlighted = highlightId != null && med.id === highlightId;
                 return (
-                  <Fragment key={med.id}>
-                    <tr className={`hover:bg-white/5 transition-colors ${isSelected ? 'bg-blue-500/10' : ''}`}>
+                  <tr
+                    key={med.id}
+                    id={`inventory-row-${med.id}`}
+                    className={`hover:bg-white/5 transition-colors ${isSelected ? 'bg-blue-500/10' : ''} ${
+                      isHighlighted ? 'bg-sky-500/10 ring-2 ring-sky-400/80' : ''
+                    }`}
+                  >
                       <td className="py-3 align-top">
                         <input
                           type="checkbox"
@@ -103,32 +108,17 @@ export default function InventoryTable({
                         />
                       </td>
                       <td className="py-3 align-top">
-                        <div className="flex items-start justify-between gap-2">
-                          <div>
-                            <div className="font-medium">{med.trade_name}</div>
-                            <div className="text-xs opacity-70">
-                              {med.barcode ? `باركود: ${med.barcode}` : ''}
-                              {med.batch_number ? ` • دفعة: ${med.batch_number}` : ''}
-                            </div>
-                            {med.category && <div className="text-xs text-blue-300 mt-1">{med.category}</div>}
+                        <div>
+                          <div className="font-medium">{med.trade_name}</div>
+                          <div className="text-xs opacity-70">
+                            {med.barcode ? `باركود: ${med.barcode}` : ''}
+                            {med.batch_number ? ` • دفعة: ${med.batch_number}` : ''}
                           </div>
-                          {hasDetails && (
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => setExpandedId(isExpanded ? null : (med.id ?? null))}
-                              className="text-xs"
-                            >
-                              {isExpanded ? 'إخفاء التفاصيل' : 'عرض التفاصيل'}
-                            </Button>
-                          )}
+                          {med.category && <div className="text-xs text-blue-300 mt-1">{med.category}</div>}
                         </div>
                       </td>
                       <td className="py-3 align-top">
                         <div className="font-semibold">{med.qty ?? 0}</div>
-                        {med.items && med.items.length > 0 && (
-                          <div className="text-[11px] opacity-70">من {med.items.length} دفعة</div>
-                        )}
                       </td>
                       <td className="py-3 align-top">
                         <div className={`font-medium ${isExpired(med.expiry, med.nearest_expiry) ? 'text-red-400' : ''}`}>
@@ -137,12 +127,6 @@ export default function InventoryTable({
                       </td>
                       <td className="py-3 align-top">
                         <div className="font-semibold">{typeof med.price === 'number' ? med.price.toFixed(2) : (Number(med.price) || 0).toFixed(2)}</div>
-                        {med.items?.[0]?.unit && (
-                          <div className="text-[11px] opacity-70">سعر للوحدة: {med.items[0].unit}</div>
-                        )}
-                        {med.items?.[0]?.supplier_name && (
-                          <div className="text-[11px] opacity-70">آخر مورد: {med.items[0].supplier_name}</div>
-                        )}
                       </td>
                       <td className="py-3 align-top">
                         <span className={`px-2 py-1 rounded-full text-xs ${status.color}`}>{status.label}</span>
@@ -160,49 +144,6 @@ export default function InventoryTable({
                         )}
                       </td>
                     </tr>
-                    {hasDetails && isExpanded && (
-                      <tr className="bg-white/5">
-                        <td></td>
-                        <td colSpan={6} className="py-3">
-                          <div className="rounded-xl border border-white/10 bg-black/20 p-3 text-xs sm:text-sm">
-                            <div className="mb-2 font-semibold">تفاصيل الموردين والدفعات:</div>
-                            <div className="space-y-2 max-h-60 overflow-y-auto pr-1">
-                              {med.items?.map((detail, idx) => (
-                                <div key={`${detail.id || idx}-${detail.batch_no || idx}`} className="rounded-lg border border-white/10 bg-white/5 p-2">
-                                  <div className="flex flex-wrap justify-between gap-2">
-                                    <div>
-                                      <div className="font-medium">{detail.item_name || med.trade_name}</div>
-                                      {detail.supplier_name && (
-                                        <div className="text-[11px] opacity-70">المورد: {detail.supplier_name}</div>
-                                      )}
-                                    </div>
-                                    <div className="text-right">
-                                      <div className="text-[11px] opacity-70">سعر الوحدة</div>
-                                      <div>{Number(detail.unit_price || 0).toFixed(2)}</div>
-                                    </div>
-                                  </div>
-                                  <div className="mt-2 grid gap-2 sm:grid-cols-3">
-                                    <div>الكمية: <span className="font-semibold">{detail.quantity ?? 0} {detail.unit || ''}</span></div>
-                                    <div>الدفعة: <span className="font-semibold">{detail.batch_no || '-'}</span></div>
-                                    <div>تاريخ الانتهاء: <span className="font-semibold">{
-                                      detail.expiry_date
-                                        ? formatExpiryDate(detail.expiry_date)
-                                        : formatExpiryDate(undefined, med.nearest_expiry)
-                                    }</span></div>
-                                  </div>
-                                  <div className="mt-1 grid gap-2 sm:grid-cols-3 text-[11px] opacity-70">
-                                    <div>رقم الشراء: {detail.id ?? '-'}</div>
-                                    <div>تاريخ الطلب: {detail.order_date ? new Date(detail.order_date).toLocaleDateString('ar-SA') : '—'}</div>
-                                    <div>الحالة: {detail.status || 'غير محدد'}</div>
-                                  </div>
-                                </div>
-                              ))}
-                            </div>
-                          </div>
-                        </td>
-                      </tr>
-                    )}
-                  </Fragment>
                 );
               })}
             </tbody>

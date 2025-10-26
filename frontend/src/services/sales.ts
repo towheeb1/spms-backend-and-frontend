@@ -76,6 +76,18 @@ export interface AddPaymentPayload {
   reference?: string;
 }
 
+export interface ReturnSaleItemPayload {
+  sale_item_id?: number;
+  medicine_id?: number;
+  qty: number;
+  note?: string;
+}
+
+export interface ReturnSalePayload {
+  items?: ReturnSaleItemPayload[];
+  note?: string;
+}
+
 // إنشاء مبيعة جديدة
 export const createSale = async (payload: CreateSalePayload) => {
   const { data } = await api.post("/pos/sales", payload);
@@ -90,13 +102,23 @@ export const createDraftSale = async (payload: CreateDraftPayload) => {
 
 // إضافة دفعة لمبيعة
 export const addSalePayment = async (saleId: number, payload: AddPaymentPayload) => {
-  const { data } = await api.post(`/sales/${saleId}/payments`, payload);
+  const { data } = await api.post(`/pos/sales/${saleId}/payments`, payload);
   return data;
+};
+
+export const returnSale = async (saleId: number, payload: ReturnSalePayload = {}) => {
+  const { data } = await api.post(`/pos/sales/${saleId}/return`, payload);
+  return data as {
+    ok: boolean;
+    sale_id: number;
+    new_status: string;
+    returned_items: Array<{ sale_item_id: number; medicine_id: number; returned_qty: number; previous_stock: number; new_stock: number }>;
+  };
 };
 
 // جلب تفاصيل مبيعة
 export const getSaleById = async (saleId: number) => {
-  const { data } = await api.get(`/sales/${saleId}`);
+  const { data } = await api.get(`/pos/sales/${saleId}`);
   return data;
 };
 
@@ -111,7 +133,7 @@ export const getSalesReport = async (params?: {
   if (params?.to) query.append('to', params.to);
   if (params?.branch_id) query.append('branch_id', params.branch_id.toString());
 
-  const { data } = await api.get(`/reports/sales?${query.toString()}`);
+  const { data } = await api.get(`/pos/reports/sales?${query.toString()}`);
   return data as SalesReport;
 };
 
@@ -126,8 +148,24 @@ export const getProfitReport = async (params?: {
   if (params?.to) query.append('to', params.to);
   if (params?.branch_id) query.append('branch_id', params.branch_id.toString());
 
-  const { data } = await api.get(`/reports/profit?${query.toString()}`);
+  const { data } = await api.get(`/pos/reports/profit?${query.toString()}`);
   return data as ProfitReport;
+};
+
+// جلب فواتير نقطة البيع الفعلية
+export const listSales = async () => {
+  const { data } = await api.get(`/pos/sales`);
+  if (Array.isArray(data)) {
+    return data as POSInvoice[];
+  }
+  if (Array.isArray((data as any)?.list)) {
+    return (data as any).list as POSInvoice[];
+  }
+  const maybeArray = data && Object.values(data).find((value) => Array.isArray(value)) as unknown;
+  if (Array.isArray(maybeArray)) {
+    return maybeArray as POSInvoice[];
+  }
+  return [];
 };
 
 // إنشاء مبيعة POS مع حساب الأرباح والخسائر (محاكاة محلية)
@@ -150,16 +188,43 @@ export const postSale = async (
     const total = cartItems.reduce((sum, item) => sum + item.total, 0);
 
     // حساب الأرباح والخسائر
+    const inventorySnapshot = (() => {
+      try {
+        const raw = localStorage.getItem('pharmacy_inventory');
+        return raw ? JSON.parse(raw) : {};
+      } catch {
+        return {};
+      }
+    })();
+
     let totalCost = 0;
     let totalProfit = 0;
 
-    cartItems.forEach(item => {
-      // تكلفة افتراضية = 70% من سعر البيع
-      const itemCost = item.unit_price * 0.7 * item.qty;
-      const itemProfit = (item.unit_price - (item.unit_price * 0.7)) * item.qty;
+    const detailedItems = cartItems.map(item => {
+      const inventoryEntry =
+        inventorySnapshot?.[item.medicine_id] ??
+        inventorySnapshot?.[String(item.medicine_id)] ??
+        null;
+
+      const parsedCost = Number(
+        inventoryEntry?.wholesale_price ??
+          inventoryEntry?.purchase_price ??
+          inventoryEntry?.price
+      );
+      const fallbackCost = item.unit_price * 0.7;
+      const costPerUnit = Number.isFinite(parsedCost) && parsedCost > 0 ? parsedCost : fallbackCost;
+      const itemCost = costPerUnit * item.qty;
+      const itemProfit = (item.unit_price - costPerUnit) * item.qty;
 
       totalCost += itemCost;
       totalProfit += itemProfit;
+
+      return {
+        ...item,
+        cost_price: Number(costPerUnit.toFixed(4)),
+        cost_total: Number(itemCost.toFixed(4)),
+        profit_total: Number(itemProfit.toFixed(4)),
+      };
     });
 
     // إنشاء الفاتورة
@@ -180,7 +245,7 @@ export const postSale = async (
     const salesHistory = JSON.parse(localStorage.getItem('sales_history') || '[]');
     salesHistory.push({
       invoice,
-      items: cartItems,
+      items: detailedItems,
       profit: {
         totalCost,
         totalProfit,

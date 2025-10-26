@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { api } from '../../../services/api';
 import { InventoryMovementsTable } from '../../../components/pharmacist/inventory/InventoryMovementsTable';
+import { Card } from '../../../components/ui';
 
 export interface InventoryMovement {
   id: number;
@@ -68,7 +69,9 @@ const InventoryMovements: React.FC = () => {
 
   return (
     <div className="p-6 space-y-6">
-      <div>
+    
+      <Card>
+          <div>
         <h1 className="text-3xl font-bold text-white mb-2">حركات المخزون</h1>
         <p className="text-gray-400">سجل مفصل لحركات المخزون والتعديلات</p>
         <div className="mt-2 flex items-center gap-3">
@@ -86,7 +89,11 @@ const InventoryMovements: React.FC = () => {
           </span>
         </div>
       </div>
-      <InventoryMovementsTable movements={movements} loading={loading} />
+               <InventoryMovementsTable movements={movements} loading={loading} />
+
+
+ 
+      </Card>
     </div>
   );
 };

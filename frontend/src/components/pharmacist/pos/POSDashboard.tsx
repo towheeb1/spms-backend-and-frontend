@@ -2,7 +2,8 @@
 import React, { useState, useEffect } from "react";
 import { FiTrendingUp, FiTrendingDown, FiDollarSign, FiUsers, FiShoppingCart, FiPackage, FiBarChart, FiCalendar } from "react-icons/fi";
 import { formatCurrency } from "../../../utils/currency";
-import { getSalesHistory, calculateDailyProfit, calculatePeriodProfit } from "../../../services/sales";
+import { fetchPharmacistDashboard } from "../../../services/pharmacist";
+import type { DashboardStat } from "../../../services/pharmacist";
 import "./style/POSDashboard.css";
 
 interface DashboardStats {
@@ -32,6 +33,7 @@ export default function POSDashboard() {
     profitMargin: 0
   });
   const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     loadDashboardStats();
@@ -39,64 +41,75 @@ export default function POSDashboard() {
 
   const loadDashboardStats = async () => {
     setIsLoading(true);
+    setError(null);
     try {
-      // حساب إحصائيات اليوم
-      const todayData = calculateDailyProfit();
-      const today = new Date();
-      const weekStart = new Date(today);
-      weekStart.setDate(today.getDate() - today.getDay());
-      const weekEnd = new Date(weekStart);
-      weekEnd.setDate(weekStart.getDate() + 6);
-      const monthStart = new Date(today.getFullYear(), today.getMonth(), 1);
-      const monthEnd = new Date(today.getFullYear(), today.getMonth() + 1, 0);
+      let isMounted = true;
 
-      const weekData = calculatePeriodProfit(
-        weekStart.toISOString().split('T')[0],
-        weekEnd.toISOString().split('T')[0]
-      );
-      const monthData = calculatePeriodProfit(
-        monthStart.toISOString().split('T')[0],
-        monthEnd.toISOString().split('T')[0]
-      );
+      const [todayData, weekData, monthData] = await Promise.all([
+        fetchPharmacistDashboard({ period: "today" }),
+        fetchPharmacistDashboard({ period: "7d" }),
+        fetchPharmacistDashboard({ period: "30d" }),
+      ]);
 
-      // حساب عدد العناصر في المخزون
-      const inventory = JSON.parse(localStorage.getItem('pharmacy_inventory') || '{}');
-      const totalItems = Object.keys(inventory).length;
-      const lowStockItems = Object.values(inventory).filter((item: any) =>
-        item.current_stock <= item.min_stock
-      ).length;
+      if (!isMounted) return;
+
+      const extractStatValue = (statsArr: DashboardStat[] | undefined, keywords: string[]): number => {
+        if (!statsArr) return 0;
+        for (const keyword of keywords) {
+          const found = statsArr.find((stat) => typeof stat.label === "string" && stat.label.includes(keyword));
+          if (found) return Number(found.value || 0);
+        }
+        return 0;
+      };
+
+      const todaySales = Number(todayData?.kpis?.salesToday || 0);
+      const todayProfit = Number(todayData?.analytics?.profit?.totalValue || 0);
+      const todayTransactions = extractStatValue(todayData?.analytics?.payments?.stats, ["الفواتير", "Transactions", "فاتورة"])
+        || extractStatValue(todayData?.analytics?.receipts?.stats, ["المدفوعات", "Payments"]);
+
+      const weekSales = Number(weekData?.analytics?.payments?.totalValue || 0);
+      const weekProfit = Number(weekData?.analytics?.profit?.totalValue || 0);
+
+      const monthSales = Number(monthData?.analytics?.payments?.totalValue || 0);
+      const monthProfit = Number(monthData?.analytics?.profit?.totalValue || 0);
+
+      const lowStockItems = Number(todayData?.kpis?.lowStock || 0);
+      const totalItems = Number(todayData?.kpis?.medicines || 0);
+
+      const todayProfitMargin = todaySales > 0 ? (todayProfit / todaySales) * 100 : 0;
 
       setStats({
-        todaySales: todayData.totalSales,
-        todayProfit: todayData.totalProfit,
-        todayTransactions: todayData.transactionCount,
-        weekSales: weekData.totalSales,
-        weekProfit: weekData.totalProfit,
-        monthSales: monthData.totalSales,
-        monthProfit: monthData.totalProfit,
+        todaySales,
+        todayProfit,
+        todayTransactions,
+        weekSales,
+        weekProfit,
+        monthSales,
+        monthProfit,
         lowStockItems,
         totalItems,
-        profitMargin: todayData.profitMargin
+        profitMargin: todayProfitMargin,
       });
     } catch (error) {
       console.error('Error loading dashboard stats:', error);
+      setError("تعذر تحميل بيانات لوحة POS. تأكد من اتصال الخادم.");
     } finally {
       setIsLoading(false);
     }
   };
 
-  const getProfitStatus = (profit: number, cost: number) => {
-    if (cost === 0) return { status: 'neutral', color: '#94a3b8', text: 'لا توجد مبيعات' };
-    const margin = (profit / cost) * 100;
-    if (margin >= 20) return { status: 'excellent', color: '#86efac', text: 'ممتاز' };
-    if (margin >= 10) return { status: 'good', color: '#4ade80', text: 'جيد' };
-    if (margin >= 0) return { status: 'fair', color: '#fbbf24', text: 'مقبول' };
-    return { status: 'loss', color: '#fca5a5', text: 'خسارة' };
+  const getProfitStatus = (sales: number, profit: number) => {
+    if (sales === 0) return { status: 'neutral', color: '#94a3b8', text: 'لا توجد بيانات', margin: 0 };
+    const margin = (profit / sales) * 100;
+    if (margin >= 20) return { status: 'excellent', color: '#86efac', text: 'ممتاز', margin };
+    if (margin >= 10) return { status: 'good', color: '#4ade80', text: 'جيد', margin };
+    if (margin >= 0) return { status: 'fair', color: '#fbbf24', text: 'مقبول', margin };
+    return { status: 'loss', color: '#fca5a5', text: 'خسارة', margin };
   };
 
-  const todayStatus = getProfitStatus(stats.todayProfit, stats.todaySales * 0.7);
-  const weekStatus = getProfitStatus(stats.weekProfit, stats.weekSales * 0.7);
-  const monthStatus = getProfitStatus(stats.monthProfit, stats.monthSales * 0.7);
+  const todayStatus = getProfitStatus(stats.todaySales, stats.todayProfit);
+  const weekStatus = getProfitStatus(stats.weekSales, stats.weekProfit);
+  const monthStatus = getProfitStatus(stats.monthSales, stats.monthProfit);
 
   if (isLoading) {
     return (
@@ -109,10 +122,17 @@ export default function POSDashboard() {
 
   return (
     <div className="pos-dashboard">
+ 
       <div className="dashboard-header">
         <h3 className="dashboard-title">لوحة تحكم نقطة البيع</h3>
         <p className="dashboard-subtitle">نظرة عامة على الأداء والمبيعات</p>
       </div>
+
+      {error && (
+        <div className="alert-item danger" style={{ marginBottom: "1rem" }}>
+          <span>{error}</span>
+        </div>
+      )}
 
       {/* كروت الإحصائيات الرئيسية */}
       <div className="dashboard-stats-grid">
@@ -142,7 +162,7 @@ export default function POSDashboard() {
                 className="status-indicator"
                 style={{ backgroundColor: todayStatus.color }}
               ></span>
-              {todayStatus.text} ({stats.profitMargin.toFixed(1)}%)
+              {todayStatus.text} ({todayStatus.margin.toFixed(1)}%)
             </span>
           </div>
         </div>
@@ -212,7 +232,7 @@ export default function POSDashboard() {
             <div className="indicator-item">
               <span className="indicator-label">هامش الربح:</span>
               <span className="indicator-value" style={{ color: todayStatus.color }}>
-                {stats.profitMargin.toFixed(1)}%
+                {todayStatus.margin.toFixed(1)}%
               </span>
             </div>
 
@@ -242,16 +262,17 @@ export default function POSDashboard() {
 
         {stats.profitMargin < 5 && stats.todaySales > 0 && (
           <div className="alert-item danger">
-            <span>هامش الربح منخفض ({stats.profitMargin.toFixed(1)}%). راجع أسعار البيع أو التكاليف.</span>
+            <span>هامش الربح منخفض ({todayStatus.margin.toFixed(1)}%). راجع أسعار البيع أو التكاليف.</span>
           </div>
         )}
 
-        {stats.profitMargin >= 15 && (
+        {todayStatus.margin >= 15 && (
           <div className="alert-item success">
-            <span>أداء ممتاز! هامش الربح ({stats.profitMargin.toFixed(1)}%) فوق المعدل الطبيعي.</span>
+            <span>أداء ممتاز! هامش الربح ({todayStatus.margin.toFixed(1)}%) فوق المعدل الطبيعي.</span>
           </div>
         )}
       </div>
-    </div>
-  );
+ 
+</div>
+   );
 }

@@ -81,6 +81,97 @@ function normalizeLine(item) {
   };
 }
 
+async function mapSaleResponse(connection, saleId, pharmacyId, invoiceFallback, itemsFallback = []) {
+  const [[sale]] = await connection.query(
+    `SELECT s.id,
+            s.sale_date,
+            s.total,
+            s.status,
+            s.customer_id,
+            s.notes,
+            s.branch_id,
+            s.register_id,
+            s.shift_id,
+            s.pharmacy_id,
+            s.created_at,
+            c.full_name AS customer_name
+       FROM sales s
+       LEFT JOIN customers c ON c.id = s.customer_id
+      WHERE s.id = ? AND s.pharmacy_id = ?
+      LIMIT 1`,
+    [saleId, pharmacyId]
+  );
+
+  if (!sale) {
+    return {
+      invoice: invoiceFallback,
+      items: itemsFallback,
+      payments: [],
+    };
+  }
+
+  const [items] = await connection.query(
+    `SELECT si.id,
+            si.sale_id,
+            si.medicine_id,
+            si.qty,
+            si.unit_price,
+            si.line_total,
+            si.unit_type,
+            si.unit_label,
+            m.name AS medicine_name
+       FROM sale_items si
+       LEFT JOIN medicines m ON m.id = si.medicine_id
+      WHERE si.sale_id = ?
+      ORDER BY si.id`,
+    [saleId]
+  );
+
+  const [payments] = await connection.query(
+    `SELECT pp.id,
+            pp.sale_id,
+            pp.method_id,
+            pp.amount,
+            pp.received_at,
+            pp.received_by,
+            pp.is_change,
+            pp.reference,
+            pm.name AS method_name
+       FROM pos_payments pp
+       LEFT JOIN payment_methods pm ON pm.id = pp.method_id
+      WHERE pp.sale_id = ?
+      ORDER BY pp.received_at ASC, pp.id ASC`,
+    [saleId]
+  );
+
+  const invoice = mapSaleRow(sale);
+  const mappedItems = items.map((row) => ({
+    id: row.id,
+    sale_id: row.sale_id,
+    medicine_id: row.medicine_id,
+    qty: Number(row.qty || 0),
+    unit_price: Number(row.unit_price || 0),
+    line_total: Number(row.line_total || 0),
+    unit_type: row.unit_type,
+    unit_label: row.unit_label || null,
+    medicine_name: row.medicine_name || null,
+  }));
+
+  const mappedPayments = payments.map((row) => ({
+    id: row.id,
+    sale_id: row.sale_id,
+    method_id: row.method_id,
+    amount: Number(row.amount || 0),
+    received_at: toIso(row.received_at),
+    received_by: row.received_by,
+    is_change: !!row.is_change,
+    reference: row.reference || null,
+    method_name: row.method_name || null,
+  }));
+
+  return { invoice, items: mappedItems, payments: mappedPayments };
+}
+
 function mapSaleRow(row) {
   return {
     id: row.id,
@@ -127,6 +218,10 @@ export async function listSales(req, res) {
       } else {
         where += " AND c.full_name LIKE ?";
       }
+    }
+
+    if (!status) {
+      where += " AND s.status <> 'draft'";
     }
 
     const [rows] = await pool.query(
@@ -316,6 +411,29 @@ async function createSaleInternal(req, res, status = "posted") {
 
     const saleId = saleResult.insertId;
 
+    for (const item of normalizedItems) {
+      await connection.query(
+        `INSERT INTO sale_items (
+           sale_id,
+           medicine_id,
+           qty,
+           unit_price,
+           line_total,
+           unit_type,
+           unit_label
+         ) VALUES (?, ?, ?, ?, ?, ?, ?)`,
+        [
+          saleId,
+          item.medicine_id,
+          item.qty,
+          item.unit_price,
+          item.line_total,
+          item.unit_type,
+          item.unit_label || null,
+        ]
+      );
+    }
+
     // تحديث المخزون وإضافة حركات المخزون للمبيعات المؤكدة
     if (status === "posted") {
       for (const item of normalizedItems) {
@@ -390,23 +508,30 @@ async function createSaleInternal(req, res, status = "posted") {
       }
     }
     await connection.commit();
-
-    const invoice = {
+    const fallbackInvoice = {
       id: saleId,
       sale_date: toIso(saleDate),
       total,
       status: saleStatus,
       customer_id,
+      customer_name: null,
+      notes: notes || null,
       branch_id,
       register_id,
       shift_id,
       pharmacy_id: pharmacyId,
-      notes: notes || null,
-      customer_name: null,
       created_at: toIso(new Date()),
     };
 
-    res.status(201).json({ invoice, items: normalizedItems, payments: [] });
+    const { invoice, items: mappedItems, payments: mappedPayments } = await mapSaleResponse(
+      connection,
+      saleId,
+      pharmacyId,
+      fallbackInvoice,
+      normalizedItems
+    );
+
+    res.status(201).json({ invoice, items: mappedItems, payments: mappedPayments });
   } catch (error) {
     await connection.rollback();
     console.error("createSale error:", error);

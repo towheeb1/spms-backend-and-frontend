@@ -18,6 +18,7 @@ import pharmacistRoutes from "./routes/pharmacist.js";
 import purchasesRoutes from "./routes/purchases.js";
 import posRoutes from "./routes/pos.js";
 import geoRoutes from "./routes/geo.js";
+import billingRoutes from "./routes/billing.js";
 import { runMigrationsSequential } from "./utils/migrations.js";
 import fs from "fs";
 
@@ -77,6 +78,8 @@ app.use("/api/purchases", purchasesRoutes);
 app.use("/pharmacist", pharmacistRoutes);
 app.use("/pos", posRoutes);
 app.use("/api/pos", posRoutes);
+app.use("/billing", billingRoutes);
+app.use("/api/billing", billingRoutes);
 
 // Welcome
 app.get("/", (_req, res) => res.json({ message: "Welcome to Smart Pharmacy backend!" }));

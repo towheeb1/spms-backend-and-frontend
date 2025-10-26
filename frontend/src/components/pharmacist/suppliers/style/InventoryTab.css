@@ -83,6 +83,16 @@
   color: #86efac;
 }
 
+.inventory-tab-stock-safe {
+  background-color: rgba(14, 165, 233, 0.2);
+  color: #7dd3fc;
+}
+
+.inventory-tab-stock-warning {
+  background-color: rgba(250, 204, 21, 0.25);
+  color: #facc15;
+}
+
 .inventory-tab-stock-out {
   background-color: rgba(239, 68, 68, 0.2);
   color: #fca5a5;
@@ -121,6 +131,24 @@
   display: flex;
   align-items: center;
   gap: 0.25rem;
+}
+
+.inventory-tab-warning-button {
+  margin-top: 0.5rem;
+  width: 100%;
+  padding: 0.45rem 0.75rem;
+  border-radius: 0.5rem;
+  background: linear-gradient(135deg, rgba(59,130,246,0.25), rgba(14,165,233,0.35));
+  color: #f8fafc;
+  font-size: 0.8rem;
+  border: 1px solid rgba(59,130,246,0.35);
+  cursor: pointer;
+  transition: transform 0.2s ease, background 0.3s ease;
+}
+
+.inventory-tab-warning-button:hover {
+  transform: translateY(-1px);
+  background: linear-gradient(135deg, rgba(59,130,246,0.4), rgba(14,165,233,0.45));
 }
 
 .inventory-tab-empty-state {

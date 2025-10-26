@@ -8,6 +8,7 @@ import { useToast } from "./ui/Toast";
 import { ThemeToggle } from "./ui/ThemeToggle";
 import { Card } from "./ui/Card";
 import { Button } from "./ui/Button";
+import { fetchPharmacistNotificationsCount, markNotificationsViewed } from "../services/notifications";
 import {
   FiHome,
   FiUser,
@@ -69,6 +70,20 @@ export function Layout() {
   const role = user?.role;
   const toast = useToast();
   const [showLogoutDialog, setShowLogoutDialog] = useState(false);
+  const [unreadCount, setUnreadCount] = useState(0);
+
+  useEffect(() => {
+    const loadCount = async () => {
+      try {
+        const count = await fetchPharmacistNotificationsCount();
+        setUnreadCount(count);
+      } catch (error) {
+        console.error("Failed to load notifications count", error);
+      }
+    };
+
+    loadCount();
+  }, []);
 
   useEffect(() => {
     const s = loadSettings<UiSettings>({ rtl: true, theme: "system", language: "ar", textScale: 100 });
@@ -91,8 +106,13 @@ export function Layout() {
 
   const navItems = roleConfig.primary;
   const quickAccessItems = roleConfig.quickAccess || [];
+  const hasQuickAccess = quickAccessItems.length > 0;
 
   const [expandedNavItems, setExpandedNavItems] = useState<Record<string, boolean>>({});
+
+  const handleLogoutClick = () => {
+    setShowLogoutDialog(true);
+  };
 
   const navClass = ({ isActive }: { isActive: boolean }) =>
     `flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-300 ease-in-out transform hover:scale-105 ${
@@ -151,22 +171,45 @@ export function Layout() {
           </div>
 
           {/* Quick Access Panel */}
-          {quickAccessItems.length > 0 && (
-            <div className="px-4 py-4 border-b border-white/10">
-              <h3 className="text-sm font-semibold text-white/70 mb-3 flex items-center gap-2">
-                <FiZap className="w-4 h-4" />
-                الوصول السريع
-              </h3>
-              <div className="space-y-1">
-                {quickAccessItems.map((item) => (
-                  <NavLink key={item.to} to={item.to} className={quickAccessClass}>
-                    <div className="text-green-400">
-                      {getIcon(item.icon) || <FiZap className="w-4 h-4" />}
-                    </div>
-                    <span className="text-sm">{item.label}</span>
-                  </NavLink>
-                ))}
-              </div>
+          {(hasQuickAccess || true) && (
+            <div className="px-4 py-4 border-b border-white/10 space-y-3">
+              <Link
+                to="/notifications"
+                onClick={async () => {
+                  setUnreadCount(0);
+                  try {
+                    await markNotificationsViewed();
+                  } catch (error) {
+                    console.error("Failed to mark notifications viewed", error);
+                  }
+                }}
+                className="relative flex items-center justify-between gap-2 rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-sm hover:bg-white/10 transition"
+              >
+                <div className="flex items-center gap-2">
+                  <FiZap className="w-4 h-4 text-amber-300" />
+                  <span>الإشعارات</span>
+                </div>
+                {unreadCount > 0 && (
+                  <span className="inline-flex min-w-[22px] justify-center rounded-full bg-red-500 px-2 text-xs font-semibold">
+                    {unreadCount > 9 ? "9+" : unreadCount}
+                  </span>
+                )}
+              </Link>
+
+              {hasQuickAccess && quickAccessItems.length > 0 && (
+                <div className="space-y-1">
+                  {quickAccessItems
+                    .filter((item) => item.to !== "/notifications")
+                    .map((item) => (
+                      <NavLink key={item.to} to={item.to} className={quickAccessClass}>
+                        <div className="text-green-400">
+                          {getIcon(item.icon) || <FiZap className="w-4 h-4" />}
+                        </div>
+                        <span className="text-sm">{item.label}</span>
+                      </NavLink>
+                    ))}
+                </div>
+              )}
             </div>
           )}
 
@@ -238,9 +281,8 @@ export function Layout() {
               <Button
                 variant="ghost"
                 className="text-sm flex items-center gap-2 hover:bg-red-500/20 hover:text-red-300 transition-all"
-                onClick={() => setShowLogoutDialog(true)}
-                disabled={!isAuthed}
-              >
+                onClick={handleLogoutClick}
+                >
                 <FiLogOut />
                 <span>تسجيل الخروج</span>
               </Button>
@@ -262,11 +304,29 @@ export function Layout() {
                   size="sm"
                   variant="outline"
                   className="flex items-center gap-1 hover:bg-red-500/20 hover:border-red-300 transition-all"
-                  onClick={() => setShowLogoutDialog(true)}
-                  disabled={!isAuthed}
-                >
+                  onClick={handleLogoutClick}
+                  >
                   <FiLogOut size={16} />
                 </Button>
+                <Link
+                  to="/notifications"
+                  onClick={async () => {
+                    setUnreadCount(0);
+                    try {
+                      await markNotificationsViewed();
+                    } catch (error) {
+                      console.error("Failed to mark notifications viewed", error);
+                    }
+                  }}
+                  className="relative inline-flex h-10 w-10 items-center justify-center rounded-full border border-white/20 bg-white/5 hover:bg-white/10 transition"
+                >
+                  <FiZap className="w-5 h-5 text-amber-300" />
+                  {unreadCount > 0 && (
+                    <span className="absolute -top-1 -right-1 min-w-[20px] px-1 rounded-full bg-red-500 text-white text-xs font-semibold text-center">
+                      {unreadCount > 9 ? "9+" : unreadCount}
+                    </span>
+                  )}
+                </Link>
               </div>
             </div>
           </header>
@@ -292,7 +352,6 @@ export function Layout() {
           </div>
         </div>
       </div>
-
       <ConfirmDialog
         open={showLogoutDialog}
         title="تسجيل الخروج"

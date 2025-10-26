@@ -22,11 +22,33 @@ function toIso(value) {
 
 export async function listPaymentMethods(_req, res) {
   try {
-    const [rows] = await pool.query(
+    let [rows] = await pool.query(
       `SELECT id, name, is_cash, is_active
          FROM payment_methods
         ORDER BY id ASC`
     );
+
+    if (!rows.length) {
+      const defaults = [
+        { name: "نقدي", is_cash: true },
+        { name: "بطاقة", is_cash: false },
+        { name: "تحويل بنكي", is_cash: false },
+      ];
+
+      const values = defaults.map((method) => [method.name, method.is_cash ? 1 : 0, 1]);
+      await pool.query(
+        `INSERT INTO payment_methods (name, is_cash, is_active)
+         VALUES ?`,
+        [values]
+      );
+
+      [rows] = await pool.query(
+        `SELECT id, name, is_cash, is_active
+           FROM payment_methods
+          ORDER BY id ASC`
+      );
+    }
+
     const list = rows.map((row) => ({
       id: row.id,
       name: row.name,
@@ -51,7 +73,7 @@ export async function addSalePayment(req, res) {
   }
 
   const { method_id, amount, is_change = false, reference = null } = req.body || {};
-  if (!method_id || !Number.isFinite(Number(amount))) {
+  if (!Number.isFinite(Number(amount))) {
     res.status(400).json({ error: "بيانات الدفع غير مكتملة" });
     return;
   }
@@ -66,6 +88,22 @@ export async function addSalePayment(req, res) {
       return;
     }
 
+    let paymentMethodId = Number(method_id);
+    if (!Number.isFinite(paymentMethodId) || paymentMethodId <= 0) {
+      const [[existingCash]] = await pool.query(
+        `SELECT id FROM payment_methods WHERE is_cash = 1 LIMIT 1`
+      );
+
+      if (existingCash) {
+        paymentMethodId = existingCash.id;
+      } else {
+        const [insertCash] = await pool.query(
+          `INSERT INTO payment_methods (name, is_cash, is_active) VALUES (?, 1, 1)`
+        , ["نقدي"]);
+        paymentMethodId = insertCash.insertId;
+      }
+    }
+
     const receivedBy = req.user?.id || null;
     const [result] = await pool.query(
       `INSERT INTO pos_payments (
@@ -76,7 +114,7 @@ export async function addSalePayment(req, res) {
          is_change,
          reference
        ) VALUES (?, ?, ?, ?, ?, ?)`,
-      [saleId, method_id, Number(amount), receivedBy, is_change ? 1 : 0, reference || null]
+      [saleId, paymentMethodId, Number(amount), receivedBy, is_change ? 1 : 0, reference || null]
     );
 
     const paymentId = result.insertId;

@@ -113,6 +113,7 @@ export interface POSReceipt {
 }
 
 export interface POSReceiptItem {
+  [x: string]: number | undefined;
   id: number;
   sale_id: number;
   medicine_id: number;

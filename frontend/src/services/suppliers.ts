@@ -9,6 +9,21 @@ export type Supplier = {
   tax_number?: string | null;
 };
 
+export interface PurchaseInvoiceResponse {
+  id: number | string;
+  supplier_name?: string | null;
+  order_date?: string | null;
+  status?: string | null;
+  total_amount?: number | null;
+  items?: Array<{
+    name?: string | null;
+    medicine_name?: string | null;
+    quantity?: number | null;
+    unit_price?: number | null;
+    line_total?: number | null;
+  }>;
+}
+
 export async function listSuppliers(q?: string) {
   const { data } = await api.get("/suppliers", { params: q ? { q } : undefined });
   if (Array.isArray(data)) return data as Supplier[];
@@ -18,6 +33,26 @@ export async function listSuppliers(q?: string) {
   if (Array.isArray(maybe)) return maybe as Supplier[];
   return [];
 }
+
+export const listPurchaseSummaries = async (): Promise<PurchaseInvoiceResponse[]> => {
+  const { data } = await api.get(`/purchases`);
+  if (Array.isArray(data)) {
+    return data as PurchaseInvoiceResponse[];
+  }
+  if (Array.isArray((data as any)?.list)) {
+    return (data as any).list as PurchaseInvoiceResponse[];
+  }
+  const maybeArray = data && Object.values(data).find((value) => Array.isArray(value)) as unknown;
+  if (Array.isArray(maybeArray)) {
+    return maybeArray as PurchaseInvoiceResponse[];
+  }
+  return [];
+};
+
+export const getPurchaseInvoiceById = async (purchaseId: number | string) => {
+  const { data } = await api.get(`/purchases/${purchaseId}`);
+  return data as PurchaseInvoiceResponse;
+};
 
 export async function createSupplier(payload: Supplier) {
   const { data } = await api.post("/suppliers", payload);

@@ -199,9 +199,15 @@ export default function SuppliersPage() {
             {activeTab === "suppliers" && (
               <SuppliersTab 
                 suppliers={suppliers}
+                purchases={purchases}
                 onAdd={() => setShowAddSupplier(true)}
                 onEdit={setEditingSupplier}
                 onDelete={handleDeleteSupplier}
+                onDataChange={loadData}
+                onPurchase={(supplierId) => {
+                  setPreselectedSupplierId(supplierId);
+                  setShowAddPurchase(true);
+                }}
               />
             )}
             {activeTab === "purchases" && (
@@ -215,6 +221,12 @@ export default function SuppliersPage() {
               <InventoryTab 
                 inventory={inventory}
                 suppliers={suppliers}
+                purchases={purchases}
+                onPurchase={(supplierId) => {
+                  setPreselectedSupplierId(supplierId);
+                  setActiveTab("purchases");
+                  setShowAddPurchase(true);
+                }}
               />
             )}
           </>

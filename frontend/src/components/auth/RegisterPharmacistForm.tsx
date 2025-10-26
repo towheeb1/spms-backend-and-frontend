@@ -119,13 +119,13 @@ export default function RegisterPharmacistForm() {
             </div>
             <div>
               <label className="text-xs opacity-80 block mb-1">البريد أو اسم المستخدم</label>
-              <Input placeholder="example@domain.com أو username" value={emailOrUsername} onChange={(e) => setEmailOrUsername(e.target.value)} onKeyDown={onKeyDown} />
+              <Input placeholder="example@domain.com أو username" value={emailOrUsername} onChange={(e) => setEmailOrUsername(e.target.value)} onKeyDown={onKeyDown}  type="email"/>
             </div>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
             <div>
-              <label className="text-xs opacity-80 block mb-1">رقم الهاتف</label>
-              <Input placeholder="مثال: +9677XXXXXXX" value={phone} onChange={(e) => setPhone(e.target.value)} onKeyDown={onKeyDown} />
+              <label className="text-xs opacity-80 block mb-1 ">رقم الهاتف</label>
+              <Input placeholder="مثال: +9677XXXXXXX" value={phone} onChange={(e) => setPhone(e.target.value)} onKeyDown={onKeyDown}  type="number"/>
             </div>
             <div>
               <label className="text-xs opacity-80 block mb-1">المسمى الوظيفي</label>
@@ -142,10 +142,10 @@ export default function RegisterPharmacistForm() {
                 <Input type={show ? "text" : "password"} placeholder="••••••••" value={password} onChange={(e) => setPassword(e.target.value)} onKeyDown={onKeyDown} className="pr-10" />
                 <button type="button" onClick={() => setShow((v) => !v)} className="absolute left-2 top-1/2 -translate-y-1/2 text-gray-300 hover:text-white" title={show ? "إخفاء" : "إظهار"}>{show ? "🙈" : "👁️"}</button>
               </div>
-              <div className="text-xs text-gray-500 mt-1">8+ أحرف مع حرف كبير ورقم.</div>
+              <span className="text-xs text-gray-500 mt-1">8+ أحرف مع حرف كبير ورقم.</span>
             </div>
             <div>
-              <label className="text-xs opacity-80 block mb-1">تأكيد كلمة المرور</label>
+              <label className="text-xs opacity-80 block mb-1">تأكيد   المرور</label>
               <Input type="password" placeholder="••••••••" value={confirm} onChange={(e) => setConfirm(e.target.value)} onKeyDown={onKeyDown} />
             </div>
           </div>

@@ -2,27 +2,17 @@ import { api } from "./api";
 
 export type InventoryRow = {
   id: number;
+  medicine_id?: number | null;
   trade_name: string;
   category?: string | null;
   qty: number;
   price: number;
   min_stock?: number;
   last_updated?: string;
+  expiry?: string | null;
   nearest_expiry?: string | null;
-  items?: Array<{
-    id?: number | string | null;
-    item_name?: string | null;
-    quantity?: number;
-    unit?: string | null;
-    unit_price?: number;
-    expiry_date?: string | null;
-    batch_no?: string | null;
-    barcode?: string | null;
-    order_date?: string | null;
-    expected_date?: string | null;
-    status?: string | null;
-    supplier_name?: string | null;
-  }>;
+  barcode?: string | null;
+  batch_number?: string | null;
 };
 
 export async function listInventory() {

@@ -1,91 +1,159 @@
 // src/components/pharmacist/pos/AccountingManager.tsx
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { FiDollarSign, FiTrendingUp, FiTrendingDown, FiCalendar, FiBarChart, FiPieChart } from "react-icons/fi";
 import { formatCurrency } from "../../../utils/currency";
-import { getSalesHistory, calculateDailyProfit, calculatePeriodProfit } from "../../../services/sales";
+import { fetchPharmacistDashboard } from "../../../services/pharmacist";
+import type { DashboardStat } from "../../../services/pharmacist";
 import "./style/AccountingManager.css";
 
 interface AccountingManagerProps {
   onDateRangeChange?: (startDate: string, endDate: string) => void;
 }
 
+const EMPTY_PROFIT = {
+  totalSales: 0,
+  totalCost: 0,
+  totalProfit: 0,
+  profitMargin: 0,
+  transactionCount: 0,
+};
+
 export default function AccountingManager({ onDateRangeChange }: AccountingManagerProps) {
   const [selectedPeriod, setSelectedPeriod] = useState<'today' | 'week' | 'month' | 'custom'>('today');
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
-  const [profitData, setProfitData] = useState<{
-    totalSales: number;
-    totalCost: number;
-    totalProfit: number;
-    profitMargin: number;
-    transactionCount: number;
-  }>({
-    totalSales: 0,
-    totalCost: 0,
-    totalProfit: 0,
-    profitMargin: 0,
-    transactionCount: 0
-  });
+  const [profitData, setProfitData] = useState(EMPTY_PROFIT);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const formatDate = useCallback((date: Date) => {
+    date.setHours(0, 0, 0, 0);
+    return date.toISOString().split('T')[0];
+  }, []);
+
+  const computeRange = useCallback(
+    (period: 'today' | 'week' | 'month' | 'custom', customStart?: string, customEnd?: string) => {
+      switch (period) {
+        case 'today': {
+          const today = new Date();
+          const formatted = formatDate(today);
+          return { start: formatted, end: formatted };
+        }
+        case 'week': {
+          const today = new Date();
+          const weekStart = new Date(today);
+          weekStart.setDate(today.getDate() - today.getDay());
+          const weekEnd = new Date(weekStart);
+          weekEnd.setDate(weekStart.getDate() + 6);
+          return { start: formatDate(weekStart), end: formatDate(weekEnd) };
+        }
+        case 'month': {
+          const now = new Date();
+          const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
+          const monthEnd = new Date(now.getFullYear(), now.getMonth() + 1, 0);
+          return { start: formatDate(monthStart), end: formatDate(monthEnd) };
+        }
+        case 'custom':
+          if (customStart && customEnd) {
+            return { start: customStart, end: customEnd };
+          }
+          return null;
+        default:
+          return null;
+      }
+    },
+    [formatDate]
+  );
+
+  const extractStatValue = useCallback((statsArr: DashboardStat[] | undefined, keywords: string[]): number => {
+    if (!statsArr) return 0;
+    for (const keyword of keywords) {
+      const found = statsArr.find((stat) => typeof stat.label === "string" && stat.label.includes(keyword));
+      if (found) return Number(found.value || 0);
+    }
+    return 0;
+  }, []);
+
+  const fetchProfitData = useCallback(
+    async (range: { start: string; end: string }) => {
+      setLoading(true);
+      setError(null);
+      try {
+        const dashboard = await fetchPharmacistDashboard({ period: "custom", startDate: range.start, endDate: range.end });
+        const analytics = dashboard?.analytics;
+
+        const salesTotal = Number(analytics?.payments?.totalValue || 0);
+        const profitTotal = Number(analytics?.profit?.totalValue || 0);
+        const returnsTotal = Number(analytics?.returns?.totalValue || 0);
+        const paymentsStats = analytics?.payments?.stats;
+        const receiptsStats = analytics?.receipts?.stats;
+
+        const transactionCount =
+          extractStatValue(paymentsStats, ["فواتير", "الفواتير", "Transactions", "فاتورة", "Invoice"]) ||
+          extractStatValue(receiptsStats, ["مدفوعات", "Payments"]);
+
+        const computedCost = Math.max(salesTotal - profitTotal, 0);
+        const profitMargin = salesTotal > 0 ? (profitTotal / salesTotal) * 100 : 0;
+
+        setProfitData({
+          totalSales: salesTotal,
+          totalCost: computedCost,
+          totalProfit: profitTotal,
+          profitMargin,
+          transactionCount,
+        });
+        onDateRangeChange?.(range.start, range.end);
+        if (salesTotal === 0 && profitTotal === 0 && returnsTotal === 0) {
+          setError("لا توجد بيانات متاحة لهذه الفترة. جرب فترة مختلفة أو تحقق من الفواتير المسجلة.");
+        }
+      } catch (err) {
+        console.error('Error loading profit report:', err);
+        setError('تعذر تحميل تقرير الأرباح. تأكد من اتصال الخادم.');
+        setProfitData(EMPTY_PROFIT);
+      } finally {
+        setLoading(false);
+      }
+    },
+    [onDateRangeChange]
+  );
 
   useEffect(() => {
-    calculateProfitForPeriod();
-  }, [selectedPeriod, startDate, endDate]);
-
-  const calculateProfitForPeriod = () => {
-    let start: string;
-    let end: string;
-
-    switch (selectedPeriod) {
-      case 'today':
-        start = end = new Date().toISOString().split('T')[0];
-        break;
-      case 'week':
-        const today = new Date();
-        const weekStart = new Date(today);
-        weekStart.setDate(today.getDate() - today.getDay());
-        const weekEnd = new Date(weekStart);
-        weekEnd.setDate(weekStart.getDate() + 6);
-        start = weekStart.toISOString().split('T')[0];
-        end = weekEnd.toISOString().split('T')[0];
-        break;
-      case 'month':
-        const monthStart = new Date(new Date().getFullYear(), new Date().getMonth(), 1);
-        const monthEnd = new Date(new Date().getFullYear(), new Date().getMonth() + 1, 0);
-        start = monthStart.toISOString().split('T')[0];
-        end = monthEnd.toISOString().split('T')[0];
-        break;
-      case 'custom':
-        start = startDate;
-        end = endDate;
-        break;
-      default:
-        start = end = new Date().toISOString().split('T')[0];
+    const initialRange = computeRange('today');
+    if (initialRange) {
+      setStartDate(initialRange.start);
+      setEndDate(initialRange.end);
+      fetchProfitData(initialRange);
     }
+  }, [computeRange, fetchProfitData]);
 
-    if (selectedPeriod === 'custom' && (!start || !end)) {
+  const handlePeriodChange = useCallback(
+    (period: 'today' | 'week' | 'month' | 'custom') => {
+      setSelectedPeriod(period);
+      if (period === 'custom') {
+        setStartDate('');
+        setEndDate('');
+        return;
+      }
+      const range = computeRange(period);
+      if (range) {
+        setStartDate(range.start);
+        setEndDate(range.end);
+        fetchProfitData(range);
+      }
+    },
+    [computeRange, fetchProfitData]
+  );
+
+  const handleCustomDateSubmit = useCallback(() => {
+    if (!startDate || !endDate) {
+      setError('يرجى اختيار فترة صالحة.');
       return;
     }
-
-    const data = selectedPeriod === 'custom' && start && end
-      ? calculatePeriodProfit(start, end)
-      : calculateDailyProfit();
-
-    setProfitData(data);
-    onDateRangeChange?.(start, end);
-  };
-
-  const handlePeriodChange = (period: 'today' | 'week' | 'month' | 'custom') => {
-    setSelectedPeriod(period);
-    if (period !== 'custom') {
-      calculateProfitForPeriod();
+    const range = computeRange('custom', startDate, endDate);
+    if (range) {
+      fetchProfitData(range);
     }
-  };
-
-  const handleCustomDateSubmit = () => {
-    if (startDate && endDate) {
-      calculateProfitForPeriod();
-    }
-  };
+  }, [computeRange, fetchProfitData, startDate, endDate]);
 
   const getProfitStatusColor = () => {
     if (profitData.profitMargin >= 20) return 'excellent';
@@ -155,6 +223,19 @@ export default function AccountingManager({ onDateRangeChange }: AccountingManag
         </div>
       </div>
 
+      {error && (
+        <div className="accounting-alert error">
+          <span>{error}</span>
+        </div>
+      )}
+
+      {loading ? (
+        <div className="accounting-loading">
+          <div className="loading-spinner"></div>
+          <span>جاري تحميل البيانات...</span>
+        </div>
+      ) : (
+        <>
       {/* كروت المجاميع */}
       <div className="accounting-summary-cards">
         <div className="summary-card sales">
@@ -279,6 +360,8 @@ export default function AccountingManager({ onDateRangeChange }: AccountingManag
           )}
         </div>
       </div>
+        </>
+      )}
     </div>
   );
 }

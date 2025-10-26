@@ -2,7 +2,7 @@
 import { Supplier, SupplierPurchaseGroup } from "./types";
 import SupplierDetailsModal from "./suppliers-com/SupplierDetailsModal";
 import { api } from "../../../services/api";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import './style/SuppliersTab.css';
 
 interface Props {
@@ -12,9 +12,11 @@ interface Props {
   onEdit: (supplier: Supplier) => void;
   onDelete: (id: string | number) => void;
   onDataChange?: () => void;
+  onPurchase?: (supplierId: string | number) => void;
+  initialOpenSupplierId?: string | number | null;
 }
 
-export default function SuppliersTab({ suppliers, purchases = [], onAdd, onEdit, onDelete, onDataChange }: Props) {
+export default function SuppliersTab({ suppliers, purchases = [], onAdd, onEdit, onDelete, onDataChange, onPurchase, initialOpenSupplierId }: Props) {
   const [selectedSupplier, setSelectedSupplier] = useState<SupplierPurchaseGroup | null>(null);
   const [initialOpenOrderId, setInitialOpenOrderId] = useState<string | number | null>(null);
 
@@ -27,6 +29,17 @@ export default function SuppliersTab({ suppliers, purchases = [], onAdd, onEdit,
       alert("فشل في إضافة الدفعة");
     }
   };
+
+  useEffect(() => {
+    if (!initialOpenSupplierId) return;
+    const group = purchases.find((g) => String(g.supplier_id) === String(initialOpenSupplierId));
+    if (group) {
+      setSelectedSupplier(group);
+      const outstanding = group.purchases?.find((order) => Number(order.amount_remaining || 0) > 0);
+      setInitialOpenOrderId(outstanding?.id ?? null);
+    }
+  }, [initialOpenSupplierId, purchases]);
+
   return (
     <div className="suppliers-tab-container">
       <div className="suppliers-tab-header">
@@ -145,6 +158,14 @@ export default function SuppliersTab({ suppliers, purchases = [], onAdd, onEdit,
                       >
                         حذف
                       </button>
+                      {onPurchase && (
+                        <button
+                          className="suppliers-tab-action-button suppliers-tab-button-buy"
+                          onClick={() => onPurchase(supplier.id)}
+                        >
+                          شراء
+                        </button>
+                      )}
                       {/* زر سداد سريع: يظهر إذا كان هناك مبلغ متبقي ضمن مجموعة المورد */}
                       {(() => {
                         const group = purchases.find((g) => String(g.supplier_id) === String(supplier.id));

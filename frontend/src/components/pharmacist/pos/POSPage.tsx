@@ -6,11 +6,12 @@ import POSActions from "./POSActions";
 import POSPaymentModal from "./POSPaymentModal";
 import POSReceiptModal from "./POSReceiptModal";
 import MedicineCard from "./MedicineCard";
-import { createSale } from '../../../services/sales';
+import { createSale, createDraftSale, type CreateSalePayload } from '../../../services/sales';
 import { listMedicines } from "../../../services/medicines";
 import { useToast } from "../../ui/Toast";
 import type { Medicine, CartItem, PaymentMethod, Customer, POSInvoice, POSPayment, POSReceipt, POSReceiptItem, SaleUnitType } from "./types";
 import "./style/POSPage.css";
+import { Card } from "../../../components/ui/Card";
 
 const INITIAL_PAGE_SIZE = 6;
 const PAGE_INCREMENT = 6;
@@ -38,11 +39,13 @@ export default function POSPage({
   const [showPaymentModal, setShowPaymentModal] = useState(false);
   const [showReceiptModal, setShowReceiptModal] = useState(false);
   const [currentReceipt, setCurrentReceipt] = useState<POSReceipt | null>(null);
+  const [pendingSalePayload, setPendingSalePayload] = useState<{ payload: CreateSalePayload; saleId: number | null }>({ payload: { items: [] }, saleId: null });
   const [searchTerm, setSearchTerm] = useState('');
   const [categoryFilter, setCategoryFilter] = useState<string>('all');
   const [loading, setLoading] = useState(true);
   const [expandedMedicines, setExpandedMedicines] = useState<Set<number>>(new Set());
   const [visibleCount, setVisibleCount] = useState<number>(INITIAL_PAGE_SIZE);
+  const [isFinalizingSale, setIsFinalizingSale] = useState(false);
 
   // جلب الأدوية عند تحميل الصفحة
   useEffect(() => {
@@ -136,31 +139,51 @@ export default function POSPage({
 
   const addToCart = (medicine: Medicine, unit: SaleUnitType = "pack") => {
     const { unit_price, unit_label, base_quantity } = determineUnitInfo(medicine, unit);
+    const resolvedIdRaw = medicine.id ?? (medicine as any)?.medicine_id ?? null;
+    const resolvedId = Number(resolvedIdRaw);
+
+    if (!Number.isFinite(resolvedId) || resolvedId <= 0) {
+      toast.error("تعذر إضافة هذا الدواء لعدم وجود معرّف صالح.");
+      return;
+    }
+
+    const displayName = medicine.name || (medicine as any)?.trade_name || "دواء غير معروف";
 
     setCart(prev => {
-      const existing = prev.find(item => item.medicine_id === medicine.id && item.unit_type === unit);
+      const existing = prev.find(item => item.medicine_id === resolvedId && item.unit_type === unit);
       if (existing) {
         const newQty = existing.qty + 1;
         return prev.map(item =>
-          item.medicine_id === medicine.id && item.unit_type === unit
-            ? { ...item, qty: newQty, total: newQty * item.unit_price, unit_label, base_quantity }
+          item.medicine_id === resolvedId && item.unit_type === unit
+            ? {
+                ...item,
+                name: displayName,
+                qty: newQty,
+                unit_price,
+                total: newQty * unit_price,
+                unit_label,
+                base_quantity,
+              }
             : item
         );
-      } else {
-        return [...prev, {
-          medicine_id: medicine.id || 0,
-          name: medicine.name,
+      }
+
+      return [
+        ...prev,
+        {
+          medicine_id: resolvedId,
+          name: displayName,
           qty: 1,
           unit_price,
           total: unit_price,
           unit_type: unit,
           unit_label,
           base_quantity,
-        }];
-      }
+        },
+      ];
     });
 
-    toast.success(`تمت إضافة ${medicine.name} (${unit_label})`);
+    toast.success(`تمت إضافة ${displayName} (${unit_label})`);
   };
 
   const updateCartQty = (medicineId: number, unit: SaleUnitType, qty: number) => {
@@ -202,37 +225,81 @@ export default function POSPage({
     onSaveDraft(cart, selectedCustomerId);
   };
 
-  const handlePostSale = async () => {
+  const handlePostSale = () => {
     if (cart.length === 0) return;
 
-    try {
-      const saleItems = cart.map(item => ({
-        medicine_id: item.medicine_id,
-        qty: item.qty,
-        unit_price: item.unit_price,
-        line_total: item.total,
-        unit_type: item.unit_type,
-      }));
+    const saleItems = cart.map(item => ({
+      medicine_id: item.medicine_id,
+      qty: item.qty,
+      unit_price: item.unit_price,
+      line_total: item.total,
+      unit_type: item.unit_type,
+    }));
 
-      const result = await createSale({
-        customer_id: selectedCustomerId ?? undefined,
-        branch_id: null,
-        register_id: null,
-        shift_id: null,
-        items: saleItems,
-      });
+    const payload: CreateSalePayload = {
+      customer_id: selectedCustomerId ?? undefined,
+      branch_id: null,
+      register_id: null,
+      shift_id: null,
+      items: saleItems,
+    };
+
+    (async () => {
+      try {
+        const draft = await createDraftSale(payload);
+
+        const receipt: POSReceipt = {
+          id: draft.invoice.id,
+          invoice: draft.invoice,
+          items: (draft.items ?? []).map((item, index) => ({
+            id: item.id ?? index + 1,
+            sale_id: draft.invoice.id,
+            medicine_id: item.medicine_id,
+            qty: item.qty,
+            unit_price: item.unit_price,
+            line_total: item.line_total,
+            medicine_name: item.medicine_name ?? item.name ?? '',
+            name: item.name,
+            unit_type: item.unit_type,
+            unit_label: item.unit_label,
+            base_quantity: item.base_quantity,
+          })),
+          payments: draft.payments ?? [],
+        };
+
+        setPendingSalePayload({ payload, saleId: draft.invoice.id });
+        setCurrentReceipt(receipt);
+        setShowPaymentModal(false);
+        setShowReceiptModal(true);
+      } catch (error) {
+        console.error('فشل في إنشاء مسودة البيع:', error);
+        toast.error('تعذر إنشاء مسودة الفاتورة. حاول مرة أخرى.');
+      } finally {
+        setIsFinalizingSale(false);
+      }
+    })();
+  };
+
+  const finalizeSale = async () => {
+    if (!pendingSalePayload.payload.items?.length || !pendingSalePayload.saleId) {
+      toast.error('لا توجد مسودة صالحة لإتمامها.');
+      return;
+    }
+    try {
+      setIsFinalizingSale(true);
+      const result = await createSale(pendingSalePayload.payload);
 
       const receipt: POSReceipt = {
         id: result.invoice.id,
         invoice: result.invoice,
-        items: cart.map(item => ({
-          id: Math.floor(Math.random() * 1000000),
+        items: (result.items ?? []).map((item, index) => ({
+          id: item.id ?? index + 1,
           sale_id: result.invoice.id,
           medicine_id: item.medicine_id,
           qty: item.qty,
           unit_price: item.unit_price,
-          line_total: item.total,
-          medicine_name: item.name,
+          line_total: item.line_total,
+          medicine_name: item.medicine_name ?? item.name ?? '',
           name: item.name,
           unit_type: item.unit_type,
           unit_label: item.unit_label,
@@ -242,14 +309,8 @@ export default function POSPage({
       };
 
       setCurrentReceipt(receipt);
-      setShowPaymentModal(false);
-      setShowReceiptModal(true);
-      setCart([]);
-      setSelectedCustomerId(null);
+      setPendingSalePayload({ payload: { items: [] }, saleId: null });
 
-      toast.success(`تم إتمام البيع بنجاح! رقم الفاتورة: #${result.invoice.id}`);
-
-      // Refresh inventory data and broadcast movement update
       localStorage.setItem('inventory_operation_completed', Date.now().toString());
       if ((window as any).refreshInventoryMovements) {
         (window as any).refreshInventoryMovements();
@@ -257,14 +318,19 @@ export default function POSPage({
 
       const medicinesData = await listMedicines();
       setMedicines(medicinesData || []);
+      setCart([]);
+      setSelectedCustomerId(null);
+      toast.success(`تم ترحيل البيع بنجاح! رقم الفاتورة: #${receipt.invoice.id}`);
     } catch (error) {
-      console.error('فشل في إتمام البيع:', error);
-      toast.error('فشل في إتمام البيع. يرجى المحاولة مرة أخرى.');
+      console.error('خطأ أثناء ترحيل الفاتورة:', error);
+      toast.error('حدث خطأ أثناء ترحيل البيع.');
+    } finally {
+      setIsFinalizingSale(false);
     }
   };
 
   const handlePayment = async (methodId: number, amount: number, isChange: boolean) => {
-    if (!currentReceipt) return;
+    if (!currentReceipt || !currentReceipt.invoice.id) return;
     await onRecordPayment(currentReceipt.invoice.id, methodId, amount, isChange);
     const receipt = await onGetReceipt(currentReceipt.invoice.id);
     setCurrentReceipt(receipt);
@@ -274,7 +340,8 @@ export default function POSPage({
 
   const closeReceipt = () => {
     setShowReceiptModal(false);
-    setCart([]);
+    setCurrentReceipt(null);
+    setPendingSalePayload({ payload: { items: [] }, saleId: null });
   };
 
   return (
@@ -425,14 +492,21 @@ export default function POSPage({
           )}
         </div>
 
-        <POSCart
+      
+      </div>
+  
+        <div>
+          <Card>
+   <POSCart
           cart={cart}
           onQtyChange={updateCartQty}
           onDelete={removeFromCart}
           total={total}
         />
-      </div>
+           </Card>
+ 
 
+ <br />
       <div className="pos-sidebar">
         <POSActions
           onSaveDraft={handleSaveDraft}
@@ -440,8 +514,8 @@ export default function POSPage({
           disabled={cart.length === 0}
         />
       </div>
-
-      {showPaymentModal && (
+</div>
+      {showPaymentModal && currentReceipt && (
         <POSPaymentModal
           isOpen={showPaymentModal}
           onClose={() => setShowPaymentModal(false)}
@@ -458,10 +532,14 @@ export default function POSPage({
           invoice={currentReceipt.invoice}
           items={currentReceipt.items}
           payments={currentReceipt.payments}
+          paymentMethods={paymentMethods}
+          onPayment={handlePayment}
           onPrint={() => console.log('طباعة الفاتورة')}
-          onSave={() => console.log('حفظ الفاتورة')}
+          onCompleteSale={finalizeSale}
         />
       )}
     </div>
   );
 }
+
+

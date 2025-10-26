@@ -1,5 +1,6 @@
 // src/components/inventory/InventoryPage.tsx
 import { useEffect, useMemo, useState, useCallback } from 'react';
+import { useLocation } from 'react-router-dom';
 import { Med, SortBy, StatusFilter } from './types';
 import InventoryFilters from './InventoryFilters';
 import InventoryStats from './InventoryStats';
@@ -8,6 +9,7 @@ import InventoryAlerts from './InventoryAlerts';
 import InventoryBulkActions from './InventoryBulkActions';
 import { listInventory, stockIn, stockOut, deleteManyMedicines } from '../../../services/inventory';
 import { deleteMedicine } from '../../../services/medicines';
+import { Card } from '../../../components/ui';
 
 export const LOW_STOCK_THRESHOLD = 10;
 export const NEAR_EXPIRY_DAYS = 30;
@@ -20,6 +22,7 @@ const normalizeDateValue = (value?: string | null) => {
 };
 
 export default function InventoryPage() {
+  const location = useLocation();
   const [items, setItems] = useState<Med[]>([]);
   const [filteredItems, setFilteredItems] = useState<Med[]>([]);
   const [loading, setLoading] = useState(true);
@@ -37,14 +40,8 @@ export default function InventoryPage() {
       setLoading(true);
       const rows = await listInventory();
       const mapped: Med[] = rows.map(r => {
-        const details = r.items || [];
-        const nearestFromRow = normalizeDateValue(r.nearest_expiry);
-        const expiryFromItems = details
-          .map((detail) => normalizeDateValue(detail.expiry_date))
-          .filter((date): date is string => typeof date === 'string' && !!date)
-          .sort((a, b) => new Date(a + 'T00:00:00').getTime() - new Date(b + 'T00:00:00').getTime());
-        const computedExpiry = nearestFromRow || expiryFromItems[0] || undefined;
-        const firstDetail = details.length > 0 ? details[0] : undefined;
+        const computedExpiry = normalizeDateValue(r.expiry) || normalizeDateValue(r.nearest_expiry);
+
         return {
           id: r.id,
           trade_name: r.trade_name,
@@ -53,11 +50,10 @@ export default function InventoryPage() {
           price: r.price,
           expiry: computedExpiry,
           nearest_expiry: computedExpiry,
-          barcode: firstDetail?.barcode || undefined,
-          batch_number: firstDetail?.batch_no || undefined,
+          barcode: r.barcode || undefined,
+          batch_number: r.batch_number || undefined,
           min_stock: r.min_stock || 0,
           last_updated: r.last_updated,
-          items: details,
         };
       });
       setItems(mapped);
@@ -135,12 +131,7 @@ export default function InventoryPage() {
       filtered = filtered.filter(m => 
         m.trade_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
         m.barcode?.includes(searchTerm) ||
-        m.batch_number?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        (m.items || []).some((it) =>
-          (it.item_name || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
-          (it.batch_no || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
-          (it.barcode || '').includes(searchTerm)
-        )
+        m.batch_number?.toLowerCase().includes(searchTerm.toLowerCase())
       );
     }
     if (categoryFilter !== 'all') filtered = filtered.filter(m => m.category === categoryFilter);
@@ -228,6 +219,13 @@ export default function InventoryPage() {
   const expired = useMemo(() => items.filter(m => isExpired(m.expiry, m.nearest_expiry)), [items, isExpired]);
   const criticalStock = useMemo(() => items.filter(m => (m.qty ?? 0) < CRITICAL_STOCK_THRESHOLD), [items]);
 
+  const highlightMedId = useMemo(() => {
+    const params = new URLSearchParams(location.search);
+    const id = params.get('highlightId');
+    const parsed = id ? Number(id) : NaN;
+    return Number.isFinite(parsed) ? parsed : null;
+  }, [location.search]);
+
   if (loading) return (
     <div className="flex justify-center items-center h-64">
       <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500"></div>
@@ -271,7 +269,9 @@ export default function InventoryPage() {
         />
       )}
 
-      <InventoryTable
+    
+<Card>
+    <InventoryTable
         items={filteredItems}
         totalItems={items.length}
         updateField={updateField}
@@ -282,7 +282,7 @@ export default function InventoryPage() {
         onSelectAll={handleSelectAll}
         onDelete={handleDeleteItem}
       />
-
+</Card>
       <InventoryAlerts lowStock={lowStock} nearExpiry={nearExpiry} expired={expired} updateField={updateField} />
     </div>
   );

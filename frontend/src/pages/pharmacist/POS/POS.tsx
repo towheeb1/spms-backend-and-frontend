@@ -1,41 +1,57 @@
 // src/pages/pharmacist/POS/POS.tsx
-import React, { useState, useEffect } from "react";
- import { api } from "../../../services/api";
+import React, { useState, useEffect, useRef } from "react";
+import { api } from "../../../services/api";
 import { useToast } from "../../../components/ui/Toast";
 import type { Customer, PaymentMethod, POSInvoice, POSPayment, POSReceipt, CartItem } from "../../../components/pharmacist/pos/types";
 import POSPage from "../../../components/pharmacist/pos/POSPage";
 
 export default function POS() {
   const toast = useToast();
+  const showLoadError = toast.error;
   const [customers, setCustomers] = useState<Customer[]>([]);
   const [paymentMethods, setPaymentMethods] = useState<PaymentMethod[]>([]);
   const [loading, setLoading] = useState(true);
+  const errorShownRef = useRef(false);
 
   useEffect(() => {
     const loadData = async () => {
       try {
         setLoading(true);
         const [customersRes, paymentsRes] = await Promise.all([
-          api.get("/customers"),
-          api.get("/payment-methods"),
+          api.get("/pos/customers"),
+          api.get("/pos/payment-methods"),
         ]);
 
         setCustomers(customersRes.data?.list || customersRes.data || []);
-        setPaymentMethods(paymentsRes.data?.list || paymentsRes.data || []);
+
+        const resolvedPayments: PaymentMethod[] = paymentsRes.data?.list || paymentsRes.data || [];
+        if (resolvedPayments.length > 0) {
+          setPaymentMethods(resolvedPayments);
+        } else {
+          setPaymentMethods([
+            { id: -1, name: "نقدي", is_cash: true, is_active: true },
+            { id: -2, name: "بطاقة", is_cash: false, is_active: true },
+            { id: -3, name: "تحويل بنكي", is_cash: false, is_active: true },
+          ]);
+        }
+        errorShownRef.current = false;
       } catch (error: any) {
         console.error('Error loading POS data:', error);
-        toast.error('فشل في تحميل بيانات نقطة البيع');
+        if (!errorShownRef.current) {
+          showLoadError('فشل في تحميل بيانات نقطة البيع');
+          errorShownRef.current = true;
+        }
       } finally {
         setLoading(false);
       }
     };
 
     loadData();
-  }, [toast]);
+  }, [showLoadError]);
 
   const handleSaveDraft = async (cart: CartItem[], customerId: number | null) => {
     try {
-      await api.post("/sales/drafts", {
+      await api.post("/pos/sales/drafts", {
         customer_id: customerId,
         items: cart,
       });
@@ -56,12 +72,12 @@ export default function POS() {
         line_total: item.total,
       })),
     };
-    const { data } = await api.post("/sales", payload);
+    const { data } = await api.post("/pos/sales", payload);
     return data;
   };
 
   const handleRecordPayment = async (saleId: number, methodId: number, amount: number, isChange: boolean) => {
-    await api.post(`/sales/${saleId}/payments`, {
+    await api.post(`/pos/sales/${saleId}/payments`, {
       method_id: methodId,
       amount,
       is_change: isChange,
@@ -69,7 +85,7 @@ export default function POS() {
   };
 
   const handleGetReceipt = async (saleId: number): Promise<POSReceipt> => {
-    const { data } = await api.get(`/sales/${saleId}`);
+    const { data } = await api.get(`/pos/sales/${saleId}`);
     return data;
   };
 
@@ -86,8 +102,7 @@ export default function POS() {
       customers={customers}
       paymentMethods={paymentMethods}
       onSaveDraft={handleSaveDraft}
-      onPostSale={handlePostSale}
-      onRecordPayment={handleRecordPayment}
+       onRecordPayment={handleRecordPayment}
       onGetReceipt={handleGetReceipt}
     />
   );

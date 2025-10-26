@@ -101,7 +101,7 @@ export default function POSMedicineSearch({ medicines = [], onAddToCart, onSearc
                   <FiPackage size={16} />
                 </div>
                 <div>
-                  <div className="font-medium text-white">{med.name}</div>
+                   <div className="font-medium text-white">{med.name}</div>
                   <div className="text-xs text-slate-400">
                     السعر: {med.price} | المتوفر: {med.stock_qty}
                     {med.barcode && ` | ${med.barcode}`}

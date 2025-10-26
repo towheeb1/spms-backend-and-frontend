@@ -9,6 +9,7 @@ export default function Reports() {
   const toast = useToast();
   const [activeTab, setActiveTab] = useState<"sales" | "profit">("sales");
   const [loading, setLoading] = useState(false);
+  const [quickRange, setQuickRange] = useState<"today" | "7d" | "30d" | "365d" | null>("7d");
 
   // فلاتر التاريخ
   const [dateFrom, setDateFrom] = useState<string>("");
@@ -26,12 +27,93 @@ export default function Reports() {
     loadBranches();
   }, []);
 
+  useEffect(() => {
+    if (activeTab === "sales" && !salesReport) {
+      loadSalesReport();
+    } else if (activeTab === "profit" && !profitReport) {
+      loadProfitReport();
+    }
+  }, [activeTab, salesReport, profitReport]);
+
   const loadBranches = async () => {
     try {
-      const { data } = await api.get("/pharmacies/branches");
-      setBranches(data?.list || data?.branches || []);
+      const { data } = await api.get("/pharmacist/profile");
+      const rawBranches = data?.profile?.branches;
+
+      let resolved: Array<{ id: number; name: string }> = [];
+
+      if (Array.isArray(rawBranches)) {
+        resolved = rawBranches
+          .map((branch: any, index: number) => ({
+            id: Number(branch?.id ?? index + 1),
+            name: branch?.name || branch?.display_name || `فرع ${index + 1}`,
+          }))
+          .filter((branch) => Boolean(branch.name));
+      } else if (typeof rawBranches === "string") {
+        try {
+          const parsed = JSON.parse(rawBranches);
+          if (Array.isArray(parsed)) {
+            resolved = parsed
+              .map((branch: any, index: number) => ({
+                id: Number(branch?.id ?? index + 1),
+                name: branch?.name || branch?.display_name || `فرع ${index + 1}`,
+              }))
+              .filter((branch) => Boolean(branch.name));
+          }
+        } catch (err) {
+          console.warn("Failed to parse branches JSON", err);
+        }
+      }
+
+      if (!resolved.length && data?.profile?.display_name) {
+        resolved = [
+          {
+            id: Number(data.profile?.pharmacy_id ?? 1),
+            name: data.profile.display_name,
+          },
+        ];
+      }
+
+      setBranches(resolved);
     } catch (error) {
       console.error("Error loading branches:", error);
+      toast.error("تعذر تحميل بيانات الأفرع");
+    }
+  };
+
+  const formatDateInput = (date: Date) => {
+    const yyyy = date.getFullYear();
+    const mm = String(date.getMonth() + 1).padStart(2, "0");
+    const dd = String(date.getDate()).padStart(2, "0");
+    return `${yyyy}-${mm}-${dd}`;
+  };
+
+  const applyQuickFilter = (range: "today" | "7d" | "30d" | "365d") => {
+    setQuickRange(range);
+    const end = new Date();
+    let start = new Date();
+
+    switch (range) {
+      case "today":
+        break;
+      case "7d":
+        start.setDate(end.getDate() - 6);
+        break;
+      case "30d":
+        start.setDate(end.getDate() - 29);
+        break;
+      case "365d":
+        start.setDate(end.getDate() - 364);
+        break;
+    }
+
+    setDateFrom(formatDateInput(start));
+    setDateTo(formatDateInput(end));
+
+    if (activeTab === "sales") {
+      loadSalesReportWithParams({ from: formatDateInput(start), to: formatDateInput(end), branch_id: branchId || undefined });
+    } else {
+      loadProfitReportWithParams({ from: formatDateInput(start), to: formatDateInput(end), branch_id: branchId || undefined });
     }
   };
 
@@ -43,6 +125,19 @@ export default function Reports() {
       if (dateTo) params.to = dateTo;
       if (branchId) params.branch_id = branchId;
 
+      const data = await getSalesReport(params);
+      setSalesReport(data);
+    } catch (error: any) {
+      console.error("Error loading sales report:", error);
+      toast.error("فشل في تحميل تقرير المبيعات");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const loadSalesReportWithParams = async (params: { from?: string; to?: string; branch_id?: number }) => {
+    setLoading(true);
+    try {
       const data = await getSalesReport(params);
       setSalesReport(data);
     } catch (error: any) {
@@ -71,11 +166,111 @@ export default function Reports() {
     }
   };
 
+  const loadProfitReportWithParams = async (params: { from?: string; to?: string; branch_id?: number }) => {
+    setLoading(true);
+    try {
+      const data = await getProfitReport(params);
+      setProfitReport(data);
+    } catch (error: any) {
+      console.error("Error loading profit report:", error);
+      toast.error("فشل في تحميل تقرير الأرباح");
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const handleFilter = () => {
     if (activeTab === "sales") {
       loadSalesReport();
     } else {
       loadProfitReport();
+    }
+  };
+
+  const handleExport = async () => {
+    try {
+      const buildTable = (headers: string[], rows: (string | number)[][]) => {
+        const headerHtml = `<tr>${headers.map((h) => `<th>${h}</th>`).join("")}</tr>`;
+        const rowsHtml = rows
+          .map((row) => `<tr>${row.map((cell) => `<td>${cell ?? ""}</td>`).join("")}</tr>`)
+          .join("");
+        return `<table border="1" style="border-collapse:collapse; text-align:right;">${headerHtml}${rowsHtml}</table>`;
+      };
+
+      const downloadExcel = (filename: string, tables: string[]) => {
+        const html = `<!DOCTYPE html><html><head><meta charset="UTF-8" /></head><body style="direction:rtl;">${tables.join("<br/>")}</body></html>`;
+        const blob = new Blob([html], { type: "application/vnd.ms-excel" });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement("a");
+        link.href = url;
+        link.download = `${filename}-${Date.now()}.xls`;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        URL.revokeObjectURL(url);
+      };
+
+      if (activeTab === "sales") {
+        if (!salesReport) {
+          await loadSalesReport();
+        }
+        const report = salesReport ?? (await getSalesReport({
+          from: dateFrom || undefined,
+          to: dateTo || undefined,
+          branch_id: branchId || undefined,
+        }));
+        const rows = report.sales;
+        if (!rows.length) {
+          toast.info("لا توجد بيانات لتصديرها");
+          return;
+        }
+        const header = ["رقم الفاتورة", "تاريخ البيع", "العميل", "الفرع", "عدد العناصر", "المبلغ الإجمالي"];
+        const tableRows = rows.map((sale) => [
+          sale.id,
+          new Date(sale.sale_date).toLocaleString("ar-SA"),
+          sale.customer_name || "عميل نقدي",
+          sale.branch_name || "-",
+          sale.items_count,
+          formatCurrency(sale.total),
+        ]);
+        const table = buildTable(header, tableRows);
+        downloadExcel("sales-report", [table]);
+      } else {
+        if (!profitReport) {
+          await loadProfitReport();
+        }
+        const report = profitReport ?? (await getProfitReport({
+          from: dateFrom || undefined,
+          to: dateTo || undefined,
+          branch_id: branchId || undefined,
+        }));
+        const header = ["الفرع", "عدد المبيعات", "الإيرادات", "التكلفة", "الربح", "هامش الربح %"];
+        const sumTable = buildTable(
+          ["البند", "القيمة"],
+          [
+            ["إجمالي المبيعات", report.summary.total_sales],
+            ["إجمالي الإيرادات", formatCurrency(report.summary.total_revenue)],
+            ["إجمالي التكلفة", formatCurrency(report.summary.total_cost)],
+            ["صافي الربح", formatCurrency(report.summary.total_profit)],
+            ["هامش الربح", `${report.summary.profit_margin}%`],
+          ]
+        );
+
+        const branchRows = report.branches.map((branch) => [
+          branch.branch_name,
+          branch.sales_count,
+          formatCurrency(branch.revenue),
+          formatCurrency(branch.cost),
+          formatCurrency(branch.profit),
+          branch.profit_margin,
+        ]);
+        const branchesTable = buildTable(header, branchRows);
+        downloadExcel("profit-report", [sumTable, branchesTable]);
+      }
+      toast.success("تم تصدير التقرير بنجاح");
+    } catch (error) {
+      console.error("export error", error);
+      toast.error("تعذر تصدير التقرير");
     }
   };
 
@@ -113,6 +308,17 @@ export default function Reports() {
 
       {/* فلاتر التاريخ والفرع */}
       <div className="reports-filters">
+        <div className="quick-filters">
+          {[{ key: "today", label: "اليوم" }, { key: "7d", label: "الأسبوع" }, { key: "30d", label: "الشهر" }, { key: "365d", label: "السنة" }].map((filter) => (
+            <button
+              key={filter.key}
+              className={`quick-filter-button ${quickRange === filter.key ? "active" : ""}`}
+              onClick={() => applyQuickFilter(filter.key as any)}
+            >
+              {filter.label}
+            </button>
+          ))}
+        </div>
         <div className="filter-group">
           <label>من تاريخ:</label>
           <input
@@ -148,6 +354,9 @@ export default function Reports() {
         </div>
         <button onClick={handleFilter} className="filter-button" disabled={loading}>
           {loading ? "جاري التحميل..." : "عرض التقرير"}
+        </button>
+        <button onClick={handleExport} className="export-button" disabled={loading}>
+          تصدير التقرير
         </button>
       </div>
 

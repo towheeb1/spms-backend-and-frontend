@@ -12,6 +12,7 @@ import {
   addSalePayment,
 } from "../controllers/posController.js";
 import { getProfitReport, getSalesReport } from "../controllers/pos/reports.js";
+import { returnSale } from "../controllers/pos/returns.js";
 
 const router = express.Router();
 
@@ -25,6 +26,7 @@ router.get("/sales/:id", getSaleById);
 router.post("/sales", createSale);
 router.post("/sales/drafts", createDraftSale);
 router.post("/sales/:id/payments", addSalePayment);
+router.post("/sales/:id/return", returnSale);
 
 // تقارير المبيعات والأرباح
 router.get("/reports/profit", getProfitReport);

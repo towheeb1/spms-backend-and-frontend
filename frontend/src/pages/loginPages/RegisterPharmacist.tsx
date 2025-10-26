@@ -57,7 +57,7 @@ export default function RegisterPharmacist() {
   }, []);
 
   function validPassword(pw: string) {
-    return pw.length >= 8  && /[0-9]/.test(pw);
+    return pw.length >= 8 && /[0-9]/.test(pw);
   }
 
   async function onSubmit(e?: React.FormEvent) {
@@ -128,20 +128,20 @@ export default function RegisterPharmacist() {
                 <Input id="reg-pharm-name" placeholder="الاسم الكامل" value={fullName} onChange={(e) => setFullName(e.target.value)} onKeyDown={onKeyDown} />
               </Field>
               <Field label="البريد أو اسم المستخدم">
-                <Input placeholder="example@domain.com أو username" value={emailOrUsername} onChange={(e) => setEmailOrUsername(e.target.value)} onKeyDown={onKeyDown} />
+                <Input placeholder="example@domain.com أو username" value={emailOrUsername} onChange={(e) => setEmailOrUsername(e.target.value)} onKeyDown={onKeyDown} type="email" />
               </Field>
-             <Field label="رقم الهاتف">
-  <Input
-    type="tel"
-    inputMode="tel"
-    dir="ltr"
-    placeholder="+9677XXXXXXX"
-    value={phone}
-    onChange={(e) => setPhone(e.target.value)}
-    onKeyDown={onKeyDown}
-    className="h-10 text-sm placeholder-white/40"
-  />
-</Field>
+                <Field label="رقم الهاتف">
+                  <Input
+                    type="tel"
+                    inputMode="tel"
+                    dir="ltr"
+                    placeholder="+9677XXXXXXX"
+                    value={phone}
+                    onChange={(e) => setPhone(e.target.value)}
+                    onKeyDown={onKeyDown}
+                    className="h-11 text-sm placeholder/40 "
+                  />
+                </Field>
               <div className="grid grid-cols-1 gap-3">
                 <Field label="كلمة المرور" hint="8+ أحرف مع حرف كبير ورقم.">
                   <div className="relative">

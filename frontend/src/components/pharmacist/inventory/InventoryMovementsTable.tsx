@@ -225,7 +225,10 @@ export function InventoryMovementsTable({ movements, loading }: Props) {
           <h3 className="text-lg font-semibold text-white">سجل الحركات</h3>
           <p className="text-sm text-gray-400">عرض {filteredMovements.length} من {movements.length} حركة</p>
         </div>
-        <DataTable columns={columns} rows={filteredMovements} />
+                <div className="mt-4 h-96 overflow-y-auto pr-2">
+                          <DataTable columns={columns} rows={filteredMovements} />
+
+</div>
       </Card>
     </div>
   );

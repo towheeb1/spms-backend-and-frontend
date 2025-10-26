@@ -2,8 +2,8 @@ import { Routes, Route, Navigate } from "react-router-dom";
 import { Layout } from "./components/Layout";
 
 // الصيدلي
-import { PharmacistHome } from "./pages/pharmacist";
-import { POSPage } from "./components/pharmacist/pos";
+import { PharmacistHome, PharmacistNotifications } from "./pages/pharmacist";
+import POS from "./pages/pharmacist/POS/POS";
 import Inventory from "./pages/pharmacist/Inventory/Inventory";
 import Suppliers from "./pages/pharmacist/Suppliers/Suppliers";
 import { Users } from "./pages/pharmacist/users/Users";
@@ -84,7 +84,7 @@ export default function AppRoutes() {
         <Route path="/dashboard/today" element={<DashboardToday />} />
         <Route path="/dashboard/branches" element={<DashboardBranches />} />
         <Route path="/dashboard/analytics" element={<DashboardAnalytics />} />
-        <Route path="/pos" element={<POSPage />} />
+        <Route path="/pos" element={<POS />} />
         <Route path="/pos/dashboard/dashboardsel" element={<DashboardSel />} />
         <Route path="/pos/AccountingDepartment" element={<AccountingDepartment />} />
         <Route path="/pos/invoices" element={<POSInvoicesPage />} />
@@ -105,6 +105,7 @@ export default function AppRoutes() {
         <Route path="/users/roles" element={<UsersRoles />} />
         <Route path="/users/audit" element={<UsersAudit />} />
         <Route path="/reports" element={<Reports />} />
+        <Route path="/notifications" element={<PharmacistNotifications />} />
         <Route path="/profile" element={<PharmacistProfile />} />
 
 

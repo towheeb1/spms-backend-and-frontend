@@ -55,10 +55,27 @@ export async function dashboard(req, res) {
     if (!pharmacy_id) return res.status(403).json({ error: "Unauthorized" });
 
     const branchId = req.query?.branch_id ? Number(req.query.branch_id) : null;
-    const period = req.query?.period || '7d';
+    const rawPeriod = req.query?.period || "7d";
+    const startDateParam = req.query?.start_date ? String(req.query.start_date) : null;
+    const endDateParam = req.query?.end_date ? String(req.query.end_date) : null;
+    const hasCustomRange = Boolean(startDateParam && endDateParam);
+
+    const resolvedPeriod = resolvePeriod(rawPeriod);
+    const effectivePeriodKey = hasCustomRange ? "custom" : resolvedPeriod.key;
 
     // Date range calculation based on period
-    const dateRange = getDateRange(period);
+    const dateRange = hasCustomRange
+      ? { startDate: startDateParam, endDate: endDateParam }
+      : getDateRange(resolvedPeriod.key);
+    const periodLabel = hasCustomRange
+      ? `من ${startDateParam} إلى ${endDateParam}`
+      : resolvedPeriod.label;
+    const periodInfo = {
+      key: effectivePeriodKey,
+      label: periodLabel,
+      from: dateRange.startDate,
+      to: dateRange.endDate,
+    };
     const branchFilter = branchId ? `AND branch_id = ${branchId}` : '';
 
     // KPIs queries with branch filter
@@ -122,7 +139,7 @@ export async function dashboard(req, res) {
        FROM sales s
        WHERE s.pharmacy_id = ?
          AND s.status = 'posted'
-         AND s.sale_date BETWEEN ? AND ?${branchFilterSales}`,
+         AND DATE(s.sale_date) BETWEEN ? AND ?${branchFilterSales}`,
       salesParams
     );
 
@@ -132,7 +149,7 @@ export async function dashboard(req, res) {
        FROM sales s
        WHERE s.pharmacy_id = ?
          AND s.status = 'posted'
-         AND s.sale_date BETWEEN ? AND ?${branchFilterSales}
+         AND DATE(s.sale_date) BETWEEN ? AND ?${branchFilterSales}
        GROUP BY DATE(s.sale_date)
        ORDER BY DATE(s.sale_date)`,
       salesParams
@@ -169,7 +186,7 @@ export async function dashboard(req, res) {
        FROM sales s
        WHERE s.pharmacy_id = ?
          AND s.status = 'returned'
-         AND s.sale_date BETWEEN ? AND ?${branchFilterSales}`,
+         AND DATE(s.sale_date) BETWEEN ? AND ?${branchFilterSales}`,
       salesParams
     );
 
@@ -228,7 +245,8 @@ export async function dashboard(req, res) {
 
     // Return data including the applied filters
     res.json({
-      filters: { branchId, period },
+      period: periodInfo,
+      filters: { branchId, period: effectivePeriodKey },
       kpis: {
         medicines: Number(meds?.c || 0),
         lowStock: Number(low?.c || 0),
@@ -238,7 +256,7 @@ export async function dashboard(req, res) {
       analytics: {
         purchasePrices: {
           title: "إجمالي المشتريات",
-          period: period,
+          period: periodLabel,
           totalValue: totalPurchaseValue,
           chartData: purchaseChartRows.map((row) => ({
             name: row.day,
@@ -251,7 +269,7 @@ export async function dashboard(req, res) {
         },
         receipts: {
           title: "طرق الدفع",
-          period: period,
+          period: periodLabel,
           totalValue: receiptsTotal,
           chartData: paymentMethodRows.map((row) => ({
             name: row.method || "غير محدد",
@@ -264,7 +282,7 @@ export async function dashboard(req, res) {
         },
         payments: {
           title: "مبيعات محققة",
-          period: period,
+          period: periodLabel,
           totalValue: totalSalesValue,
           chartData: salesChartRows.map((row) => ({
             name: row.day,
@@ -277,18 +295,18 @@ export async function dashboard(req, res) {
         },
         returns: {
           title: "مرتجعات المبيعات",
-          period: period,
+          period: periodLabel,
           totalValue: totalReturnsValue,
           count: returnsCount,
         },
         profit: {
           title: "صافي ربح تقريبي",
-          period: period,
+          period: periodLabel,
           totalValue: Number(grossProfit || 0),
         },
         purchaseOrder: {
           title: "مستحقات الموردين",
-          period: period,
+          period: periodLabel,
           totalValue: outstandingAmount,
           count: outstandingCount,
         },
